@@ -12,6 +12,8 @@ import shutil
 from pathlib import Path
 import re
 import sys
+import subprocess
+from importlib.metadata import version as package_version
 import tempfile
 from urllib.parse import unquote, urlsplit
 from urllib.request import HTTPRedirectHandler, build_opener
@@ -81,17 +83,50 @@ def locked_entry(url):
             fail("Unsupported Termux index architecture")
         if source.path not in (expected, expected + ".gz") or entry["sourceFormat"] != "termux-packages":
             fail("Expected official Termux Packages index")
+    elif entry["sourceFormat"] == "sigstore-bundle":
+        # Identity policy comes from python.org, never from the untrusted bundle.
+        name = artifact.path.rsplit("/", 1)[-1]
+        if (not re.fullmatch(r"/ftp/python/3\.14\.8/python-3\.14\.8-(aarch64|x86_64)-linux-android\.tar\.gz", artifact.path)
+                or entry["sourceUrl"] != url + ".sigstore"
+                or entry.get("certIdentity") != "hugo@python.org"
+                or entry.get("certOidcIssuer") != "https://github.com/login/oauth"
+                or entry.get("buildProvenance") != "unconfirmed"
+                or entry.get("architecture") != name.split("-", 3)[2]):
+            fail("Unexpected Python release identity, ABI or provenance policy")
     elif not (artifact.path.startswith("/ftp/python/") and source.path.startswith("/ftp/python/")
               and entry["sourceFormat"] == "sha256sum"):
-        fail("Expected official Python SHA256 checksum file; no supported evidence means BLOCKED")
+        fail("Expected supported official Python signature/checksum evidence")
     return entry
 
 
 def verify_evidence(entry, raw=None):
+    if raw is None and entry.get("evidenceFile"):
+        evidence_root = LOCK.parent / "evidence"
+        path = (evidence_root / entry["evidenceFile"]).resolve()
+        if path.parent != evidence_root.resolve():
+            fail("Evidence file must be inside the pinned evidence directory")
+        raw = path.read_bytes()
     raw = get_metadata(entry["sourceUrl"]) if raw is None else raw
     original = raw
     if hashlib.sha256(raw).hexdigest() != entry["sourceSha256"]:
         fail("Official metadata changed: review and relock its evidence; refusing stale assumptions")
+    if entry["sourceFormat"] == "sigstore-bundle":
+        if package_version("sigstore") != "4.5.0":
+            fail("Install the pinned Sigstore 4.5.0 verification environment")
+        # Verify the pinned digest using the supplier's bundle and trusted client
+        # roots. Cached artifacts are independently hashed by fetch/validate.
+        # This authenticates a release publisher, not its build workflow.
+        with tempfile.TemporaryDirectory(prefix="cyrene-sigstore-") as directory:
+            bundle = Path(directory) / "release.sigstore"
+            bundle.write_bytes(raw)
+            result = subprocess.run(
+                [sys.executable, "-m", "sigstore", "verify", "identity", "--offline",
+                 "--bundle", str(bundle), "--cert-identity", entry["certIdentity"],
+                 "--cert-oidc-issuer", entry["certOidcIssuer"], "sha256:" + entry["sha256"]],
+                capture_output=True, text=True, timeout=120)
+            if result.returncode != 0:
+                fail("Python publisher verification failed: " + result.stderr[-2000:])
+        return original
     if entry["sourceUrl"].endswith(".gz"):
         raw = gzip.decompress(raw)
     content = raw.decode("utf-8")
