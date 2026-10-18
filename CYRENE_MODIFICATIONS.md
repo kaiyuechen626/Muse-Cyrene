@@ -117,3 +117,7 @@ integration method and the two-test market sample class. ZIP/7z integration
 remains active. Original binaries remain in the local candidate. No production
 source was changed. Updated source-status documentation and fixture ignore rules.
 This reduces executable regression coverage; no Android tests/builds were run.
+
+## Release build preparation, 2026-10-18
+
+Pinned 17 runtime inputs with signed Termux metadata and Python publisher Sigstore verification, added rejection tests and an isolated Linux packaging workflow. Build-workflow provenance is not asserted. Cyrene ABI splits now match the complete runtime bundle (arm64-v8a and x86_64); the upstream build retains its original ABI list. No speech or playback implementation changed. APK/device acceptance and dependency redistribution review remain pending.

@@ -292,7 +292,13 @@ android {
             isEnable = true
             reset()
             // P0 打样：追加 x86_64（本地模拟器验证内置运行时）；发布前评估是否保留
-            include("arm64-v8a", "armeabi-v7a", "x86_64")
+            // Cyrene's complete Node/Python bundle supports these two 64-bit ABIs.
+            // Do not emit a 32-bit APK with missing runtimes; upstream remains unchanged.
+            if (isCyreneBuild) {
+                include("arm64-v8a", "x86_64")
+            } else {
+                include("arm64-v8a", "armeabi-v7a", "x86_64")
+            }
             // 日常验证用 -PnoUniversal 跳过 169MB 的 universal 包，只打 ABI 分包
             isUniversalApk = providers.gradleProperty("noUniversal").isPresent.not()
         }
