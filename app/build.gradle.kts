@@ -299,8 +299,9 @@ android {
             } else {
                 include("arm64-v8a", "armeabi-v7a", "x86_64")
             }
-            // 日常验证用 -PnoUniversal 跳过 169MB 的 universal 包，只打 ABI 分包
-            isUniversalApk = providers.gradleProperty("noUniversal").isPresent.not()
+            // Universal APKs also collect unsupported 32-bit libraries from dependencies.
+            // Cyrene therefore distributes only the two complete runtime ABI splits.
+            isUniversalApk = !isCyreneBuild && providers.gradleProperty("noUniversal").isPresent.not()
         }
     }
 

@@ -126,3 +126,7 @@ Corrected three inherited Lint baseline paths to use the built-in
 `$GRADLE_USER_HOME` variable spelling. Lint 32.2.1 interprets the previous braced
 name as a different variable and failed while reading the baseline. Existing
 issue entries and enabled checks are unchanged; no new suppression was added.
+
+Disabled the Cyrene universal APK because AGP included dependency-only 32-bit
+ABIs without their complete runtimes. Cyrene emits arm64-v8a and x86_64 APKs;
+the original Muse universal option remains unchanged.
