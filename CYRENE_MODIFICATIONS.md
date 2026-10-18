@@ -121,3 +121,8 @@ This reduces executable regression coverage; no Android tests/builds were run.
 ## Release build preparation, 2026-10-18
 
 Pinned 17 runtime inputs with signed Termux metadata and Python publisher Sigstore verification, added rejection tests and an isolated Linux packaging workflow. Build-workflow provenance is not asserted. Cyrene ABI splits now match the complete runtime bundle (arm64-v8a and x86_64); the upstream build retains its original ABI list. No speech or playback implementation changed. APK/device acceptance and dependency redistribution review remain pending.
+
+Corrected three inherited Lint baseline paths to use the built-in
+`$GRADLE_USER_HOME` variable spelling. Lint 32.2.1 interprets the previous braced
+name as a different variable and failed while reading the baseline. Existing
+issue entries and enabled checks are unchanged; no new suppression was added.
