@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Muse Cyrene modification: 2026-10-18; see CYRENE_MODIFICATIONS.md; GPL-3.0-or-later. -->
+<resources>
+    <string name="cyrene_manual_updates_title">Cyrene 手动更新</string>
+    <string name="cyrene_manual_updates_description">首发版不提供在线更新检查。请从你信任的 Cyrene 发布者获取同签名的新版本并手动更新；上游 Muse 安装包不能用于升级 Cyrene。</string>
+</resources>

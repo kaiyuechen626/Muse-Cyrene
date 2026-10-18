@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Muse Cyrene modification notice: 2026-10-18; unofficial fork; see CYRENE_MODIFICATIONS.md (GPL-3.0-or-later). -->
+<resources>
+    <string name="reading_pause">暂停</string>
+    <string name="reading_resume">继续</string>
+    <string name="settings_keep_reading">离开聊天后继续朗读</string>
+    <string name="settings_keep_reading_hint">已开始的朗读在切换页面、其他应用或锁屏后继续；可在通知中停止。关闭此项会停止当前朗读。</string>
+    <string name="reading_notification_title">Muse 语音朗读</string>
+    <string name="reading_notification_text">正在朗读，可随时停止</string>
+    <string name="reading_stop">停止朗读</string>
+    <string name="reading_background_failed">后台朗读服务启动失败，请保持应用在前台</string>
+</resources>

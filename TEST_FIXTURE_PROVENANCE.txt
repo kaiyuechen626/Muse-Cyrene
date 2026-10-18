@@ -1,0 +1,49 @@
+PUBLIC EXPORT NOTE — 2026-10-18
+The four binaries below are NOT included in this directory. Their originals
+remain in the local candidate. Tests depending on them are explicitly ignored;
+ZIP/7z integration tests remain active. Original provenance evidence follows.
+
+Muse Cyrene test fixture provenance — 2026-10-18
+
+Upstream: https://github.com/Zer0Qing/Muse
+Baseline: v2.6.1 / d7ce76b9640e42afcb571fa3813c9bcf0779969c
+Verification: local candidate git hash-object --no-filters matches each blob
+at that baseline in the retained upstream repository. SHA256 values below were
+recomputed from candidate bytes. No fixture was modified or executed.
+Online commit pages could not be retrieved during this review; this is a local
+Git-object comparison, not a fresh independent remote authentication.
+
+1. app/src/test/resources/knowledge/archive-fixtures/rar4_sample.rar
+SHA256: 91e21f4126181790429f5e5ecdefedae6d6883ed6b4b396fc94d4ed6b32c065a
+Git blob: 4cde363a7fe70d217316f83d9ff3cd65adb1b5fa
+2. app/src/test/resources/knowledge/archive-fixtures/rar5_sample.rar
+SHA256: aaf1a7d974f302f181720280151053f15ef1119b13d2f7bf9fddf2163bbf1701
+Git blob: bf6839769eb7d0c6622f5cc0b2504ebb5beffe4e
+Both introduced by 308add840e382d9b8802390a3763183a566bcd3d.
+Contracts: two named files, ordered CRLF payloads, EOF and import behavior;
+RAR4 additionally supports a deliberate payload corruption / CRC regression.
+Missing: original generation inputs, tool/version and applicable fixture grant.
+
+3. app/src/test/resources/market/color-toolkit-1.0.0.muse-plugin
+SHA256: 625772af137f57099f74299102feb0c2b7fd25b7d0c184d30102055461aef887
+Git blob: 3a607b7061edbe893c0da28ee3670ec8d088c41e
+Contract: historical catalog package, publisher museai, original signature and
+content digest. Re-signing a replacement does not preserve historical coverage.
+Missing: original catalog/source record and fixture redistribution scope.
+
+4. app/src/test/resources/market/signer-selftest-b-1.0.0.muse-plugin
+SHA256: 5c14b61ec0e3477f4048baf5ce0bc4256c20849f52f0c4d2d22c5890951a59e5
+Git blob: 92cd549e984f9c3f0c182f9e3ddacb4cdc9105f0
+Contract: signer normalization, token configuration and omitted empty toolCards.
+Missing: precise original input/command/tool revision and fixture grant.
+Both plugin fixtures introduced by 79458ed72add5e3f58cc2fc4af54ed08a1c6a421.
+
+The upstream NOTICE grants GPL v3-or-later for the program. Missing per-file
+license fields do not by themselves establish that a file is unlicensed.
+Current evidence establishes repository origin, not independent ownership of
+every embedded input. The prior publication hold remains pending clarification;
+this document neither adds a new license nor claims an infringement finding.
+
+Relevant tests: KnowledgeArchiveReaderTest,
+KnowledgeArchiveImporterIntegrationTest, MarketSamplePackageTest.
+No Android tests were run during this provenance/documentation update.

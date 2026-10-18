@@ -1,0 +1,5 @@
+Junrar 8.1.1 / UnRAR — 审查说明，不是许可证全文或授权结论。
+来源：https://raw.githubusercontent.com/junrar/junrar/v8.1.1/LICENSE
+精确 POM：https://repo.maven.apache.org/maven2/com/github/junrar/junrar/8.1.1/junrar-8.1.1.pom
+2026-10-18：依据既有审查，附加用途限制的 GPL 组合分发兼容依据仍未解决。
+JAR、sources JAR、内置声明、版权及适用例外待核实。保留 RAR 功能及测试，保持发布阻塞。此说明不替代必要的许可文本。

@@ -1,0 +1,11 @@
+Muse Cyrene v0.1.0 candidate - unofficial derivative
+Upstream: https://github.com/Zer0Qing/Muse
+Tag: v2.6.1
+Commit: d7ce76b9640e42afcb571fa3813c9bcf0779969c
+Upstream copyright: Copyright (C) 2026 Mozi; original notices remain.
+License: GPL version 3 or (at your option) any later version, with applicable third-party notices.
+Preparation: 2026-10-18. This is not the date of authorship of all inherited files.
+History policy: a new local repository will begin from this selected working tree. No upstream .git, objects, alternates, reflogs, tags or remote configuration are copied. This is not a GitHub fork containing upstream ancestry and is not represented as independent authorship. Existing upstream/development repositories remain untouched. No initial commit is made during preparation.
+Cyrene functional changes: auto-read preference and reply-completion gating, deduplication, playback state/callback fixes, foreground/background continuation, pause/resume, application labeling, conditional cyreneBuild identity and LeakCanary selection, localized resources and regression gate tests. The prior 17 modified +13 new migration record remains in CYRENE_MODIFICATIONS.md.
+Clean-tree changes: removal of non-build presentation/history artifacts and upstream publishing workflow; portable diagnostic paths; optional private-fixture test explicitly skipped; geometric replacement artwork; this provenance and publication policy. No package/version/signing or TTS runtime changes.
+See CLEAN_SOURCE_POLICY.txt for unresolved gates. Source history omission does not waive notices, modified-source licensing, corresponding-source obligations, or rights in third-party assets/dependencies.

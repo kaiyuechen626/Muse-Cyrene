@@ -1,0 +1,8 @@
+ML Kit Terms of Service — 审查说明，不是许可证全文或授权结论。
+2026-10-18：依据既有 REMAINING_BLOCKERS_REVIEW.txt 的精确 POM 核查，更正错误的 Apache-2.0 分类。
+com.google.mlkit:text-recognition-chinese:16.0.1
+https://dl.google.com/dl/android/maven2/com/google/mlkit/text-recognition-chinese/16.0.1/text-recognition-chinese-16.0.1.pom
+com.google.mlkit:barcode-scanning:17.3.0
+https://dl.google.com/dl/android/maven2/com/google/mlkit/barcode-scanning/17.3.0/barcode-scanning-17.3.0.pom
+适用条款来源：https://developers.google.com/ml-kit/terms
+未完成：精确 AAR/模型/传递依赖、条款全文及通知保全、指标告知、GPL 组合分发依据。保持发布阻塞。此说明不能代替必要的许可文本。

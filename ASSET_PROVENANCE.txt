@@ -1,0 +1,24 @@
+Muse Cyrene geometric replacement assets
+Date: 2026-10-18
+License: GPL-3.0-or-later, together with the project.
+New procedural geometric chat/sound-bar icon and abstract avatar were created for this preparation. No original bitmap pixels, stock illustration, font, character design or external image library is used. This records generation provenance, not a guarantee of exclusive trademark rights.
+Reproduce with: node tools/cyrene-art/generate.cjs
+Dimensions and resource filenames are preserved; Android launch appearance still requires device verification.
+Assets:
+app/src/main/res/drawable/ic_muse_logo.png 1536x1024
+app/src/main/res/drawable-nodpi/default_assistant_avatar.png 1254x1254
+app/src/main/res/mipmap-hdpi/ic_launcher.png 72x72
+app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png 162x162
+app/src/main/res/mipmap-hdpi/ic_launcher_round.png 72x72
+app/src/main/res/mipmap-mdpi/ic_launcher.png 48x48
+app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png 108x108
+app/src/main/res/mipmap-mdpi/ic_launcher_round.png 48x48
+app/src/main/res/mipmap-xhdpi/ic_launcher.png 96x96
+app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png 216x216
+app/src/main/res/mipmap-xhdpi/ic_launcher_round.png 96x96
+app/src/main/res/mipmap-xxhdpi/ic_launcher.png 144x144
+app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png 324x324
+app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png 144x144
+app/src/main/res/mipmap-xxxhdpi/ic_launcher.png 192x192
+app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png 432x432
+app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png 192x192

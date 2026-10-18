@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Muse Cyrene modification: 2026-10-18; see CYRENE_MODIFICATIONS.md; GPL-3.0-or-later. -->
+<resources>
+    <string name="cyrene_manual_updates_title">Cyrene manual updates</string>
+    <string name="cyrene_manual_updates_description">This initial release does not check for updates online. Obtain a newer version signed with the same certificate from your trusted Cyrene publisher and update manually. Upstream Muse packages cannot upgrade Cyrene.</string>
+</resources>

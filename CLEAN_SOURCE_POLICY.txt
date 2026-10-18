@@ -1,0 +1,7 @@
+PUBLIC DEVELOPMENT SOURCE EXPORT — 2026-10-18
+See SOURCE_PUBLICATION_STATUS.txt for current scope and limitations.
+Four unresolved historical test binaries are excluded, with explicit skipped
+tests and retained provenance. This is not the complete original test bundle.
+Keep LICENSE, NOTICE, attribution and modification dates. Do not upload the
+parent workspace, signing credentials, personal exports or build artifacts.
+This export contains no Git history. Binary release acceptance remains open.

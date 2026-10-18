@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Muse Cyrene modification notice: 2026-10-18; unofficial fork; see CYRENE_MODIFICATIONS.md (GPL-3.0-or-later). -->
+<resources>
+    <string name="settings_auto_read_replies">Leer respuestas de IA automáticamente</string>
+    <string name="settings_auto_read_replies_hint">Lee las respuestas completadas en el chat en primer plano con la voz actual, sin interrumpir la reproducción.</string>
+</resources>

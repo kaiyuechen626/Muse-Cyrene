@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Muse Cyrene modification notice: 2026-10-18; unofficial fork; see CYRENE_MODIFICATIONS.md (GPL-3.0-or-later). -->
+<resources>
+    <string name="settings_auto_read_replies">AI の返信を自動で読み上げる</string>
+    <string name="settings_auto_read_replies_hint">画面を開いているチャットの返信完了後、現在の音声で読み上げます。再生中は割り込みません。</string>
+</resources>

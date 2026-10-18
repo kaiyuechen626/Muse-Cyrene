@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Muse Cyrene modification notice: 2026-10-18; unofficial fork; see CYRENE_MODIFICATIONS.md (GPL-3.0-or-later). -->
+<resources>
+    <string name="settings_auto_read_replies">AI 답변 자동 읽기</string>
+    <string name="settings_auto_read_replies_hint">열려 있는 채팅의 답변이 완료되면 현재 음성으로 읽습니다. 재생 중에는 중단하지 않습니다.</string>
+</resources>

@@ -1,0 +1,256 @@
+package io.zer0.muse.tools
+
+import android.content.Context
+import io.zer0.ai.core.ProviderConfig
+import io.zer0.ai.image.ImageService
+import io.zer0.common.AppJson
+import io.zer0.common.Logger
+import io.zer0.common.resultOf
+import io.zer0.muse.R
+import io.zer0.muse.data.plugin.PluginManager
+import io.zer0.muse.data.skill.SkillEntity
+import io.zer0.muse.data.sticker.StickerLibraryRepository
+import io.zer0.muse.tools.script.PythonSkillEngine
+import io.zer0.muse.tools.script.SkillBridge
+import io.zer0.muse.tools.script.SkillEngineResult
+import io.zer0.muse.tools.script.WebViewSkillEngine
+import io.zer0.muse.ui.qrcode.QrCodeGenerator
+
+/**
+ * P1-3b 拆域：Skill 媒体/JS/插件工具实现（从 SkillExecutor.kt 迁移）。
+ * 由 SkillExecutor 委托调用。
+ */
+class SkillMediaToolsImpl(
+    private val context: Context,
+    private val stickerLibraryRepository: StickerLibraryRepository?,
+    private val imageService: ImageService?,
+    private val imageDrawConfigProvider: suspend () -> Pair<ProviderConfig?, String?> = { null to null },
+    private val pluginManager: PluginManager?,
+) {
+
+    suspend fun execListStickers(args: Map<String, String>): String {
+        val repo = stickerLibraryRepository
+            ?: return context.getString(R.string.skill_sticker_not_configured)
+        val category = args["category"]?.takeIf { it.isNotBlank() }
+        // v1.0.54: 无 category 参数时只返回分类概览(分类名 + 数量),
+        //   不再全量列出每个表情包 — 表情包多时全量列表可达数万字符,
+        //   被 Agent Loop 截断后模型看不到后面的分类,不敢调用 send_sticker。
+        if (category == null) {
+            val cats = repo.listCategories()
+            if (cats.isEmpty()) return context.getString(R.string.skill_sticker_list_empty)
+            val sb = StringBuilder()
+            sb.appendLine("共 ${cats.size} 个分类:")
+            cats.forEach { c ->
+                val cnt = repo.listStickers(c).size
+                sb.appendLine("[$c]( $cnt 个)")
+            }
+            sb.append("请调用 list_stickers 并传入 category 参数查看某个分类的具体表情包,然后调用 send_sticker 发送。")
+            return sb.toString()
+        }
+        val items = repo.listStickers(category)
+        if (items.isEmpty()) return context.getString(R.string.skill_sticker_list_empty)
+        val sb = StringBuilder()
+        // v1.0.54: 分类列表限制展示前 20 个 — 分类内贴纸可能上百个,全量输出会被截断,
+        //   模型看不到完整列表就反复查 list_stickers,死循环不调 send_sticker。
+        val shown = items.take(20)
+        sb.appendLine("共 ${items.size} 个表情包(分类: $category),以下为前 ${shown.size} 个:")
+        shown.forEach { item ->
+            sb.appendLine("[${item.category}] ${item.fileName} (id=${item.id})")
+        }
+        sb.append("请从以上列表中选择一个合适的 id,立即调用 send_sticker 发送,不要重复查询列表。")
+        return sb.toString()
+    }
+
+    suspend fun execSendSticker(args: Map<String, String>): String {
+        val repo = stickerLibraryRepository
+            ?: return context.getString(R.string.skill_sticker_not_configured)
+        val id = args["id"]?.takeIf { it.isNotBlank() }
+            ?: return context.getString(R.string.skill_missing_param_id)
+        val file = repo.getStickerFile(id)
+            ?: return context.getString(R.string.skill_sticker_not_found, id)
+        return context.getString(R.string.skill_sticker_sent, file.absolutePath)
+    }
+
+    suspend fun execGenerateImage(args: Map<String, String>): String {
+        val service = imageService
+            ?: return context.getString(R.string.skill_image_not_configured)
+        val prompt = args["prompt"]?.takeIf { it.isNotBlank() }
+            ?: return context.getString(R.string.skill_missing_param_prompt)
+        val size = args["size"]?.takeIf { it.isNotBlank() } ?: "1024x1024"
+        // v1.136: Skill 可显式指定 model,未指定时由 ImageService 按 ProviderSpecificConfig / Catalog 兜底
+        val (drawProviderConfig, configModelId) = imageDrawConfigProvider()
+        val model = args["model"]?.takeIf { it.isNotBlank() } ?: configModelId ?: ""
+        val referenceImage = args["reference_image"]?.takeIf { it.isNotBlank() }
+        return resultOf {
+            val urls = service.generate(
+                prompt = prompt,
+                params = io.zer0.ai.image.ImageGenParams(
+                    model = model,
+                    size = size,
+                    responseFormat = "url",
+                    n = 1,
+                    referenceImageUri = referenceImage,
+                ),
+                providerConfig = drawProviderConfig,
+            )
+            if (urls.isEmpty()) return@resultOf context.getString(R.string.skill_image_no_result, prompt)
+            context.getString(R.string.skill_image_generated, prompt, urls.joinToString("\n"))
+        }.onError { msg, _ -> Logger.w("SkillExecutor", "generate_image 失败: $msg") }
+            .getOrNull() ?: context.getString(R.string.skill_image_failed, prompt)
+    }
+
+    suspend fun execGenerateQr(args: Map<String, String>): String {
+        val content = args["content"]?.takeIf { it.isNotBlank() }
+            ?: return context.getString(R.string.skill_missing_param_content_qr)
+        val size = args["size"]?.toIntOrNull()?.coerceIn(100, 2000) ?: 600
+        return resultOf {
+            val bitmap = io.zer0.muse.ui.qrcode.QrCodeGenerator.generateQrBitmap(content, size)
+                ?: return@resultOf context.getString(R.string.skill_qr_gen_failed)
+            val filename = "qr_${System.currentTimeMillis()}.png"
+            val file = java.io.File(context.cacheDir, filename)
+            file.outputStream().use { out ->
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+            }
+            bitmap.recycle()
+            context.getString(R.string.skill_qr_generated, file.absolutePath)
+        }.onError { msg, _ -> Logger.w("SkillExecutor", "generate_qr 失败: $msg") }
+            .getOrNull() ?: context.getString(R.string.skill_qr_gen_failed)
+    }
+
+    suspend fun execExecuteJavascript(args: Map<String, String>): String {
+        val code = args["code"]?.takeIf { it.isNotBlank() }
+            ?: return """{"result":"","logs":[],"error":"参数 code 缺失或为空"}"""
+        val timeoutMs = args["timeout_ms"]?.toLongOrNull()?.coerceIn(1L, 60_000L) ?: 10000L
+        // 初始化 JsSandbox(幂等)— 注入 Application Context
+        JsSandbox.init(context)
+
+        val input = kotlinx.serialization.json.buildJsonObject {
+            put("code", kotlinx.serialization.json.JsonPrimitive(code))
+            put("timeout_ms", kotlinx.serialization.json.JsonPrimitive(timeoutMs.toString()))
+        }
+        // 委托给 CodeExecutionTool.execute(suspend)— 复用统一的参数解析与结果序列化逻辑
+        val output = CodeExecutionTool.execute(input)
+        return output.toString()
+    }
+
+    suspend fun execPluginTool(skill: SkillEntity, argumentsJson: String): String {
+        val parts = skill.implementationKotlin.split(":")
+        if (parts.size < 3) return "插件工具路由格式错误: ${skill.implementationKotlin}"
+        val pluginId = parts[1]
+        val functionName = parts[2]
+        val manager = pluginManager ?: return "插件未安装: $pluginId"
+        val plugin = manager.findPlugin(pluginId) ?: return "插件未安装: $pluginId"
+        if (!plugin.enabled) return "插件已禁用: ${plugin.name}"
+        // P0: capabilities/tools/entryCode 一律来自磁盘重新验证后的 manifest，
+        // 不再信任 InstalledPlugin.capabilities 等注册表缓存；并在进入 JS 沙盒前
+        // 拒绝已被新 manifest 移除/改名的 functionName。
+        val verified = manager.loadVerifiedFunction(pluginId, functionName)
+            ?: return "插件入口校验失败或工具已移除: $pluginId/$functionName"
+
+        val configJson = manager.getPluginConfigJson(verified.manifest)
+        val argsJson = "[" + argumentsJson.ifBlank { "{}" } + "]"
+
+        // v2.7: 按 manifest.runtime 分派执行引擎。
+        //  - python：内置 Python 运行时（无 WebView 沙盒，子进程隔离）
+        //  - 其余（默认 js）：WebView V8 沙盒 + __bridge__ 桥接
+        if (verified.manifest.runtime.equals("python", ignoreCase = true)) {
+            return execPythonPluginTool(
+                pluginId = pluginId,
+                entryCode = verified.entryCode,
+                functionName = functionName,
+                argsJson = argsJson,
+                configJson = configJson,
+            )
+        }
+
+        JsSandbox.init(context)
+        // C-30: 传入 pluginId 作为 scopeKey,使熔断状态与 localStorage 按插件隔离,
+        //   一个插件死循环超时不会熔断/影响其他插件与内置 JS 工具。
+        return when (
+            val result = WebViewSkillEngine().callFunction(
+                verified.entryCode,
+                functionName,
+                argsJson,
+                scopeKey = pluginId,
+                pluginConfigJson = configJson,
+            )
+        ) {
+            is SkillEngineResult.Success -> {
+                val value = result.valueJson
+                // F-17 + v2.2.1 大沙盒；v2.x（沙盒放开）：桥接动作**默认全放行**。
+                // 之前严格按 manifest 声明能力逐项放行，过于保守：插件作者忘了声明就调不到。
+                // 现改为：动作不设门槛，但**保留两类底线**（这两项是正确性而非保守）：
+                //  1. fs_* 仍锁定在插件自己的沙盒目录(workspace/plugins/<pluginId>)，防路径逃逸；
+                //  2. http_* 仍走 SSRF 防护（拒内网/本地地址）。
+                val allowedBridgeActions = SkillBridge.ALL_ACTIONS
+                val bridgeHost = SkillBridge.Host(
+                    context = context,
+                    fsRoot = java.io.File(context.filesDir, "workspace/plugins/$pluginId"),
+                )
+                when (val bridge = SkillBridge.tryHandle(value, allowedBridgeActions, bridgeHost)) {
+                    is SkillBridge.HandleResult.NotBridge -> {
+                        runCatching {
+                            AppJson.decodeFromString<String>(value)
+                        }.getOrElse {
+                            value.ifBlank { "null" }
+                        }
+                    }
+                    // 桥接请求的执行结果作为技能返回值直接返回给 LLM
+                    is SkillBridge.HandleResult.Output -> bridge.json
+                    // 桥接解析/执行失败（含 action 不支持）→ 返回错误对象，避免脚本以为成功
+                    is SkillBridge.HandleResult.Failure ->
+                        kotlinx.serialization.json.buildJsonObject {
+                            put("error", kotlinx.serialization.json.JsonPrimitive(bridge.message))
+                        }.toString()
+                }
+            }
+            is SkillEngineResult.Error -> {
+                if (JsSandbox.isCircuitBrokenFor(pluginId)) {
+                    resultOf { manager.setEnabled(pluginId, false) }
+                        .onError { msg, _ -> Logger.w("SkillMediaToolsImpl", "自动禁用插件失败: $msg") }
+                    "插件已自动禁用: JS 沙盒连续超时，请稍后重试"
+                } else {
+                    "插件工具执行失败: ${result.message}"
+                }
+            }
+        }
+    }
+
+    /**
+     * v2.7: 执行 Python 插件工具。
+     *
+     * 与 JS 分支的差异：
+     *  - 无 WebView 沙盒，也无 __bridge__ 桥接（Python 子进程自身已有完整能力，
+     *    文件读写/网络/标准库直接用；高风险仍由插件工具的整体审批链兜底）；
+     *  - 首次调用前确保 Python 运行时数据（stdlib/CA bundle）已就绪。
+     *  - 返回值直接作为工具结果（字符串）；返回非字符串时 JSON 序列化。
+     */
+    private suspend fun execPythonPluginTool(
+        pluginId: String,
+        entryCode: String,
+        functionName: String,
+        argsJson: String,
+        configJson: String?,
+    ): String {
+        val dataReady = io.zer0.muse.runtime.PythonRuntime.ensureData(context)
+        if (dataReady.isFailure) {
+            return "Python 运行时未就绪: ${dataReady.exceptionOrNull()?.message}"
+        }
+        return when (
+            val result = PythonSkillEngine(context).callPluginFunction(
+                entryCode = entryCode,
+                functionName = functionName,
+                argsJson = argsJson,
+                scopeKey = pluginId,
+                pluginConfigJson = configJson,
+            )
+        ) {
+            is SkillEngineResult.Success -> runCatching {
+                AppJson.decodeFromString<String>(result.valueJson)
+            }.getOrElse {
+                result.valueJson.ifBlank { "null" }
+            }
+            is SkillEngineResult.Error -> "插件工具执行失败: ${result.message}"
+        }
+    }
+}

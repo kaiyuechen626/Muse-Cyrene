@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Muse Cyrene modification notice: 2026-10-18; unofficial fork; see CYRENE_MODIFICATIONS.md (GPL-3.0-or-later). -->
+<resources>
+    <string name="settings_auto_read_replies">自动朗读 AI 回复</string>
+    <string name="settings_auto_read_replies_hint">在前台聊天中，回复完成后使用当前音色朗读；正在播放时不打断。</string>
+</resources>
