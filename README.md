@@ -8,7 +8,7 @@
 
 Muse Cyrene 是基于 [Muse v2.6.1](https://github.com/Zer0Qing/Muse/tree/v2.6.1) 的**非官方修改版 Android 应用**，不是 Muse 原生插件，也不由上游维护者发布或背书。当前为待审查的源码副本，尚未发布 v0.1.0 正式 APK。
 
-目标：打字发送消息 → AI 回复完成 → 使用用户配置的 TTS 自动朗读。应用不包含昔涟语音包、Fish Audio API Key 或免费额度，也不附带公共中转服务。
+目标：打字发送消息 → AI 回复完成 → 使用用户配置的 TTS 自动朗读。应用不包含语音包、Fish Audio API Key 或免费额度，也不附带公共中转服务。
 
 ## 已实测与使用
 
