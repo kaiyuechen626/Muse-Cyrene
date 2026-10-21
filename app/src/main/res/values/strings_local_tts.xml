@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="local_tts_embedded_engine">应用内离线角色音色</string>
+    <string name="local_tts_engine">手机本地语音引擎</string>
+    <string name="local_tts_system_default">系统默认引擎（原有方式）</string>
+    <string name="local_tts_hint">先在 CloneTTS 中创建、试听并激活昔涟音色，再选择已安装的 CloneTTS 引擎。若下方没有独立音色，保留默认音色，跟随 CloneTTS 内的选择。仅使用引擎声明的离线音色；首次配置后请断网试听验证。更改引擎会停止当前朗读。</string>
+    <string name="local_tts_unavailable">本地引擎不可用，请刷新或选择系统默认引擎，并确认已安装离线语音数据。</string>
+    <string name="local_tts_voice_unavailable">所选音色不可用或需要网络，请重新选择离线音色。</string>
+    <string name="local_tts_synthesis_failed">本地语音合成失败或超时，朗读已结束。请检查引擎并重新试听。</string>
+    <string name="local_tts_initializing">正在连接本地语音引擎…</string>
+    <string name="local_tts_refresh">刷新引擎与音色</string>
+    <string name="local_tts_settings">打开系统语音设置</string>
+    <string name="local_tts_settings_missing">无法打开，请在手机设置中搜索“文字转语音”。</string>
+    <string name="local_tts_preview">试听本地中文语音</string>
+    <string name="local_tts_sample">你好，我是昔涟。今天也一起创造美好的回忆吧。</string>
+    <string name="local_tts_fast_start">更快开始朗读</string>
+    <string name="local_tts_fast_start_hint">缩短应用内音色的生成等待，声音可能略有变化。关闭可恢复原模式；切换会停止当前朗读。</string>
+</resources>

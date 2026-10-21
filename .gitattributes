@@ -18,3 +18,9 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 *.py text eol=lf
+
+# Preserve exact accepted 0.1.9 speech-source bytes used for the 0.2.0 APK.
+app/src/main/java/io/zer0/muse/ui/chat/ChatAudioCoordinator.kt -text
+app/src/main/java/io/zer0/muse/ui/settings/MediaSettingsPage.kt -text
+app/src/main/java/io/zer0/muse/ui/speech/TtsManager.kt -text
+app/src/main/res/values/strings_local_tts.xml -text

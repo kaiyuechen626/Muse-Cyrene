@@ -1,0 +1,24 @@
+{
+  "versionName": "0.2.0",
+  "versionCode": 271,
+  "applicationId": "io.zer0.muse.cyrene",
+  "releaseAbi": "arm64-v8a",
+  "signerSha256": "f11844ed7ab467de465b38733385b632a5612859e184f6aaf9176908a9c69b5d",
+  "status": "LOCAL_CANDIDATE_ON_HOLD",
+  "publishAllowed": false,
+  "requiresBeforePublication": [
+    "User confirms Muse Cyrene 0.1.0 has been published",
+    "Compare package, signing certificate and versionCode with the actual published 0.1.0; rebuild if required",
+    "Resolve recorded binary redistribution license issues",
+    "Complete final candidate device acceptance and upgrade checks"
+  ],
+  "selectedTests": [
+    "*AutoReadReplyGateTest",
+    "*ChatAudioCoordinatorVoiceTest",
+    "*LocalReadingTest",
+    "*NativeSpeechCallbackTest",
+    "*LocalSpeechChunkerTest",
+    "*SpeechPrefetchTest",
+    "*SpeechSynthesisRequestsTest"
+  ]
+}

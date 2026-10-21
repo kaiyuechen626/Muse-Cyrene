@@ -1,3 +1,5 @@
+> 当前 0.2.0 草稿见 releases/0.2.0.md。以下为保留的历史说明，不代表 0.2.0 已发布或已验收。
+
 <!-- Muse Cyrene modification notice: 2026-10-18; unofficial fork; see CYRENE_MODIFICATIONS.md (GPL-3.0-or-later). -->
 
 # Muse Cyrene v0.1.0 — preparation (2026-10-18)

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-18 (source review only)",
-  "appName": "Muse",
-  "appVersion": "UNRESOLVED: variant-specific; not an APK inventory",
+  "generatedAt": "2026-10-21 (0.2.0 preparation; binary redistribution review pending)",
+  "appName": "Muse Cyrene",
+  "appVersion": "0.2.0 (271)",
   "licenseTexts": {
     "apache-2.0": "licenses/apache-2.0.txt",
     "mit": "licenses/mit.txt",
@@ -10,7 +10,12 @@
     "bsd-2-clause": "licenses/bsd-2-clause.txt",
     "epl-1.0": "licenses/epl-1.0.txt",
     "ml-kit-terms-review-pending": "licenses/components/ml-kit-review.txt",
-    "unrar-review-pending": "licenses/components/junrar-review.txt"
+    "unrar-review-pending": "licenses/components/junrar-review.txt",
+    "sherpa-onnx-apache-2.0": "licenses/cyrene-local-voice/sherpa-onnx-LICENSE",
+    "zipvoice-apache-2.0": "licenses/cyrene-local-voice/ZipVoice-LICENSE",
+    "espeak-ng-gpl-3.0": "licenses/cyrene-local-voice/espeak-ng-COPYING",
+    "onnxruntime-mit": "licenses/cyrene-local-voice/onnxruntime-LICENSE",
+    "vocos-source-mit": "licenses/cyrene-local-voice/vocos-LICENSE"
   },
   "dependencies": [
     {
@@ -544,6 +549,30 @@
       "licenseId": "unrar-review-pending",
       "url": "https://github.com/junrar/junrar/tree/v8.1.1",
       "notes": "UnRAR 附加限制与 GPL 组合分发依据未解决；保留依赖，阻塞发布。"
+    },
+    {
+      "groupId": "com.k2fsa.sherpa",
+      "name": "sherpa-onnx-static-link-onnxruntime",
+      "version": "1.13.8",
+      "licenseId": "sherpa-onnx-apache-2.0",
+      "url": "https://github.com/k2-fsa/sherpa-onnx/tree/v1.13.8",
+      "notes": "本地 AAR；包含的第三方组件仍遵守各自许可。"
+    },
+    {
+      "groupId": "org.espeak-ng",
+      "name": "espeak-ng (sherpa/Piper fork)",
+      "version": "ed530aa113046142eb5115cf2fc9157854d0ffe1",
+      "licenseId": "espeak-ng-gpl-3.0",
+      "url": "https://github.com/csukuangfj/espeak-ng/tree/ed530aa113046142eb5115cf2fc9157854d0ffe1",
+      "notes": "随原生语音运行库使用；GPL 对应源码义务需在发布前完成。"
+    },
+    {
+      "groupId": "org.k2-fsa",
+      "name": "ZipVoice model integration",
+      "version": "zipvoice-distill-int8 (user supplied)",
+      "licenseId": "zipvoice-apache-2.0",
+      "url": "https://github.com/k2-fsa/ZipVoice",
+      "notes": "APK 不附模型、个人录音或角色音色；用户单独导入 .cyvoice。"
     }
   ],
   "reviewStatus": "BLOCKED: unresolved artifacts, notices and redistribution evidence",

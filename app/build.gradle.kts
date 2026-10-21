@@ -66,6 +66,11 @@ val museWebAssetsDir = layout.buildDirectory.dir("generated/museWebAssets").get(
 val syncMuseWebAssets =
     tasks.register<Copy>("syncMuseWebAssets") {
         val webDist = rootProject.file("web/apps/client/dist")
+        if (isCyreneBuild) {
+            check(webDist.resolve("index.html").isFile) {
+                "Cyrene requires the embedded web client; build or restore its verified assets first."
+            }
+        }
         from(webDist)
         into(File(museWebAssetsDir, "muse-web"))
         onlyIf { webDist.isDirectory }
@@ -292,9 +297,16 @@ android {
             isEnable = true
             reset()
             // P0 打样：追加 x86_64（本地模拟器验证内置运行时）；发布前评估是否保留
-            include("arm64-v8a", "armeabi-v7a", "x86_64")
-            // 日常验证用 -PnoUniversal 跳过 169MB 的 universal 包，只打 ABI 分包
-            isUniversalApk = providers.gradleProperty("noUniversal").isPresent.not()
+            // Cyrene's complete Node/Python bundle supports these two 64-bit ABIs.
+            // Do not emit a 32-bit APK with missing runtimes; upstream remains unchanged.
+            if (isCyreneBuild) {
+                include("arm64-v8a", "x86_64")
+            } else {
+                include("arm64-v8a", "armeabi-v7a", "x86_64")
+            }
+            // Universal APKs also collect unsupported 32-bit libraries from dependencies.
+            // Cyrene therefore distributes only the two complete runtime ABI splits.
+            isUniversalApk = !isCyreneBuild && providers.gradleProperty("noUniversal").isPresent.not()
         }
     }
 
@@ -317,6 +329,8 @@ android {
         // 使沙盒可从 nativeLibraryDir 直接 exec 内置 Node 运行时（libmuse_node.so）
         jniLibs {
             useLegacyPackaging = true
+            // Preserve the existing Cyrene offline runtime; this app ships only 64-bit ABIs.
+            excludes += "lib/x86/**"
             // 内置运行时二进制经 patchelf 重写过段布局，且已在 Termux 侧 strip 过；
             // 必须跳过 AGP 的 llvm-strip：对 patchelf 产物再 strip 会破坏段/程序头
             // 对应关系，导致执行时 SIGSEGV（已实测复现）。
@@ -363,6 +377,7 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
+    implementation(files("libs/sherpa-onnx-static-link-onnxruntime-1.13.8.aar"))
     // 项目内模块
     implementation(project(":ai"))
     implementation(project(":memory"))

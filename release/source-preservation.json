@@ -1,0 +1,22 @@
+{
+  "publicSourceFiles": 2551,
+  "productionAndBuildFilesPreserved": 2046,
+  "modifiedBaselineFiles": [
+    ".gitignore",
+    "BUILDING_CYRENE.md",
+    "CLEAN_SOURCE_POLICY.txt",
+    "CYRENE_LICENSE_REVIEW.md",
+    "CYRENE_MODIFICATIONS.md",
+    "CYRENE_RELEASE_CHECKLIST.md",
+    "NOTICE",
+    "README.md",
+    "README_EN.md",
+    "REBUILD_STATUS.md",
+    "SOURCE_PUBLICATION_STATUS.txt",
+    "app/src/main/assets/licenses/manifest.json",
+    "release_notes.md"
+  ],
+  "voiceAarExcludedFromSource": true,
+  "credentialPatternScan": "passed",
+  "publishAllowed": false
+}

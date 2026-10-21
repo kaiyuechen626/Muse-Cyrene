@@ -67,6 +67,7 @@ fun MediaSettingsPage(
     val scope = rememberCoroutineScope()
 
     SettingsSubPageScaffold(title = stringResource(R.string.settings_media_page_title), onBack = onBack) {
+        item { io.zer0.muse.ui.speech.OfflineVoiceSection(config, settings, ttsManager) }
         // ── 1. 语音播报(TTS) ──
         item { SectionLabel(stringResource(R.string.settings_media_tts_section)) }
         item {
@@ -121,9 +122,10 @@ fun MediaSettingsPage(
                         scope.launch { settings.saveMediaConfig(config.copy(ttsPitch = v)) }
                     },
                 )
+                LocalEngineSelector(ttsManager, config, settings)
                 // TTS 声音选择
                 SettingsGroupDivider()
-                TtsVoiceSelector(
+                if (config.ttsEngine != "cyrene-offline") TtsVoiceSelector(
                     ttsManager = ttsManager,
                     currentVoice = config.ttsVoiceName,
                     onVoiceSelected = { voiceName ->
@@ -133,45 +135,109 @@ fun MediaSettingsPage(
             }
         }
 
-        // ── 2. 云端 TTS 引擎 ──
-        item { SectionLabel(stringResource(R.string.settings_media_cloud_tts_section)) }
-        item {
-            CloudTtsConfigSection(
-                config = config,
-                settings = settings,
-                ttsManager = ttsManager,
-            )
-        }
-
-        // ── v1.99(4.8): 云端 TTS 高级参数(仅云端引擎显示)──
-        if (config.ttsEngine != "system" && hasAdvancedParams(config.ttsEngine)) {
-            item { SectionLabel(stringResource(R.string.settings_media_tts_advanced_section)) }
+        if (!ttsManager.localSpeechOnly) {
+            // ── 2. 云端 TTS 引擎 ──
+            item { SectionLabel(stringResource(R.string.settings_media_cloud_tts_section)) }
             item {
-                AdvancedTtsParamsSection(
+                CloudTtsConfigSection(
                     config = config,
                     settings = settings,
+                    ttsManager = ttsManager,
                 )
             }
-        }
 
-        // ── P2-9: 语音克隆入口(独立 SettingsGroup,从云端 TTS 引擎下方进入)──
-        item {
-            SettingsGroup(
-                modifier = Modifier.padding(top = 8.dp),
-            ) {
-                SettingsItemRow(
-                    icon = MuseIcons.microphone,
-                    title = stringResource(R.string.voice_cloning_title),
-                    subtitle = stringResource(R.string.voice_cloning_new_voice),
-                    onClick = onOpenVoiceCloning,
-                ) {
-                    ChevronRight()
+            // ── v1.99(4.8): 云端 TTS 高级参数(仅云端引擎显示)──
+            if (config.ttsEngine != "system" && hasAdvancedParams(config.ttsEngine)) {
+                item { SectionLabel(stringResource(R.string.settings_media_tts_advanced_section)) }
+                item {
+                    AdvancedTtsParamsSection(
+                        config = config,
+                        settings = settings,
+                    )
                 }
             }
-        }
 
+            // ── P2-9: 语音克隆入口(独立 SettingsGroup,从云端 TTS 引擎下方进入)──
+            item {
+                SettingsGroup(
+                    modifier = Modifier.padding(top = 8.dp),
+                ) {
+                    SettingsItemRow(
+                        icon = MuseIcons.microphone,
+                        title = stringResource(R.string.voice_cloning_title),
+                        subtitle = stringResource(R.string.voice_cloning_new_voice),
+                        onClick = onOpenVoiceCloning,
+                    ) {
+                        ChevronRight()
+                    }
+                }
+            }
+
+        }
         // 系统默认音频路由
         // 输出设备跟随 Android 系统与当前音频焦点,不在 Muse 内重复抽象设备选择。
+    }
+}
+
+@Composable
+private fun LocalEngineSelector(ttsManager: TtsManager, config: MediaConfig, settings: SettingsRepository) {
+    val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val ready by ttsManager.isReady.collectAsStateWithLifecycle()
+    val error by ttsManager.engineError.collectAsStateWithLifecycle()
+    var expanded by remember { mutableStateOf(false) }
+    var engines by remember { mutableStateOf(ttsManager.getAvailableEngines()) }
+    SettingsGroupDivider()
+    SettingsItemRow(
+        icon = MuseIcons.microphone,
+        title = stringResource(R.string.local_tts_engine),
+        subtitle = if (config.ttsEngine == "cyrene-offline") stringResource(R.string.local_tts_embedded_engine)
+            else config.ttsSystemEngine.ifBlank { stringResource(R.string.local_tts_system_default) },
+        onClick = { engines = ttsManager.getAvailableEngines(); expanded = true },
+    ) { ChevronRight() }
+    Text(stringResource(R.string.local_tts_hint), modifier = Modifier.padding(16.dp))
+    if (error != null) Text(error.orEmpty(), modifier = Modifier.padding(16.dp))
+    if (!ready && error == null) Text(stringResource(R.string.local_tts_initializing), modifier = Modifier.padding(16.dp))
+    MuseCapsuleButton(
+        text = stringResource(R.string.local_tts_refresh),
+        onClick = { ttsManager.refreshSystemEngine() },
+    )
+    MuseCapsuleButton(
+        text = stringResource(R.string.local_tts_settings),
+        onClick = {
+            runCatching { context.startActivity(android.content.Intent("com.android.settings.TTS_SETTINGS")) }
+                .onFailure { MuseToast.show(context.getString(R.string.local_tts_settings_missing)) }
+        },
+    )
+    MuseCapsuleButton(
+        text = stringResource(R.string.local_tts_preview),
+        onClick = {
+            if (!ttsManager.speak(context.getString(R.string.local_tts_sample), "local_tts_preview")) {
+                MuseToast.show(context.getString(R.string.local_tts_unavailable))
+            }
+        },
+    )
+    MuseCapsuleButton(text = stringResource(R.string.reading_stop), onClick = { ttsManager.stop() })
+    if (expanded) MuseSelectionSheet(
+        title = stringResource(R.string.local_tts_engine),
+        onDismissRequest = { expanded = false },
+    ) {
+        MuseListItem(
+            headlineContent = { Text(stringResource(R.string.local_tts_system_default)) },
+            onClick = {
+                scope.launch { settings.saveMediaConfig(config.copy(ttsEngine = "system", ttsSystemEngine = "", ttsVoiceName = "")) }
+                expanded = false
+            },
+        )
+        engines.forEach { engine ->
+            MuseListItem(
+                headlineContent = { Text("${engine.label} (${engine.name})") },
+                onClick = {
+                    scope.launch { settings.saveMediaConfig(config.copy(ttsEngine = "system", ttsSystemEngine = engine.name, ttsVoiceName = "")) }
+                    expanded = false
+                },
+            )
+        }
     }
 }
 
@@ -180,7 +246,8 @@ fun MediaSettingsPage(
  */
 @Composable
 private fun TtsVoiceSelector(ttsManager: TtsManager, currentVoice: String, onVoiceSelected: (String) -> Unit) {
-    val voices = remember { ttsManager.getAvailableVoices() }
+    val ready by ttsManager.isReady.collectAsStateWithLifecycle()
+    var voices by remember(ready) { mutableStateOf(ttsManager.getAvailableVoices()) }
 
     var expanded by remember { mutableStateOf(false) }
     val defaultLabel = stringResource(R.string.settings_media_tts_voice_default)
@@ -196,7 +263,7 @@ private fun TtsVoiceSelector(ttsManager: TtsManager, currentVoice: String, onVoi
             } else {
                 displayName
             },
-            onClick = { if (voices.isNotEmpty()) expanded = true },
+            onClick = { voices = ttsManager.getAvailableVoices(); expanded = true },
         ) {
             ChevronRight()
         }

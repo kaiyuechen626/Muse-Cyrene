@@ -1,0 +1,48 @@
+name: Cyrene runtime build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [release/0.1.0-build]
+    paths:
+      - tools/runtime-inputs/**
+      - tools/runtime-pack/**
+      - tools/python-pack/**
+      - .github/workflows/cyrene-runtime-build.yml
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y patchelf binutils curl ca-certificates
+          python -m pip install --require-hashes -r tools/runtime-inputs/sigstore-requirements.txt
+      - name: Verify supplier evidence and rejection behavior
+        run: |
+          python -B tools/runtime-inputs/check_evidence.py
+          python -B -m unittest discover -s tools/runtime-inputs -p test_verified_fetch.py -v
+      - name: Assemble both ABIs and verify output
+        run: |
+          python -B tools/runtime-inputs/runtime_bundle.py assemble
+          python -B tools/runtime-inputs/runtime_bundle.py verify
+          tar -czf cyrene-runtime.tar.gz -C app/build cyrene-runtime
+          sha256sum cyrene-runtime.tar.gz > cyrene-runtime.tar.gz.sha256
+      - name: Save build output for local APK build
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyrene-runtime-${{ github.sha }}
+          path: |
+            cyrene-runtime.tar.gz
+            cyrene-runtime.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 7

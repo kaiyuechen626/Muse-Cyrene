@@ -296,6 +296,10 @@ data class MediaConfig(
     val audioOutput: String = "speaker",
     /** v1.97: TTS 引擎类型:"system"(系统 TTS) / "openai"(OpenAI TTS) / "minimax"(MiniMax TTS) / "edge"(Edge TTS)。 */
     val ttsEngine: String = "system",
+    /** Android engine package; blank keeps the original system default as a manual fallback. */
+    val ttsSystemEngine: String = "",
+    /** Optional lower-step generation in the embedded engine; old quality remains default. */
+    val cyreneFastSynthesis: Boolean = false,
     /** v1.97: 云端 TTS API Key(加密存储)。 */
     val ttsApiKey: String = "",
     /** v1.97: 云端 TTS 模型名(如 openai: gpt-4o-mini-tts, minimax: speech-2.6-turbo)。 */

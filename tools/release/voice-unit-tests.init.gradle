@@ -1,0 +1,8 @@
+// Selected pure JUnit/MockK suites only. Do not use for Robolectric/device tests.
+gradle.beforeProject { p ->
+    if (p.path == ':app') {
+        p.configurations.matching { it.name == 'debugUnitTestRuntimeClasspath' }.configureEach {
+            exclude group: 'org.robolectric', module: 'nativeruntime-dist-compat'
+        }
+    }
+}

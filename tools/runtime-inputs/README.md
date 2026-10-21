@@ -1,5 +1,17 @@
 # Runtime input gate — Cyrene, 2026-10-18
 
+## Current release-build preparation
+
+The lock now contains all 17 inputs. `evidence/` preserves signed Termux indexes
+and Python Sigstore bundles; see `evidence/PROVENANCE.txt`. Run
+`python -B tools/runtime-inputs/check_evidence.py` with gpgv and the hash-pinned
+Sigstore requirements installed. The validator supports publisher-authenticated
+Python bundles with exact ABI/URL/digest binding. Build provenance remains
+unconfirmed and is not inferred from publisher identity. Six rejection/positive
+tests passed locally. The Cyrene runtime workflow builds both ABIs without
+signing credentials or Release publishing permissions. The sections below
+describe the earlier empty-lock preparation state.
+
 Status: **BLOCKED**. `inputs.lock.json` intentionally contains no input records.
 Exact official hashes have not been established. Both pack scripts preflight all
 selected URLs and fail before packaging if any entry/evidence is absent. This is

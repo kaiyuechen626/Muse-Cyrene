@@ -1946,9 +1946,9 @@ class ChatViewModel(
                         serial == generationState.streamGenerationSerial &&
                         voiceState.state.value == VoiceConversationState.IDLE &&
                         notificationManager.isAppForeground() && content.isNotBlank() &&
-                        !current.isSpeaking && current.speakingMessageId == null && ttsManager.isReady.value
+                        ttsManager.isReady.value
                     if (autoReadGate.claim(serial, eligible)) {
-                        toggleTts(messageId, content)
+                        audioCoordinator.toggleTts(messageId, content, ::reportError, enqueue = true)
                     }
                 }
             },

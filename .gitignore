@@ -110,3 +110,17 @@ cyrene-local.properties
 /app/src/test/resources/knowledge/archive-fixtures/rar5_sample.rar
 /app/src/test/resources/market/color-toolkit-1.0.0.muse-plugin
 /app/src/test/resources/market/signer-selftest-b-1.0.0.muse-plugin
+
+# 0.2.0 local release preparation: never publish private inputs/artifacts
+app/libs/*.aar
+keystore.properties
+*.jks
+*.keystore
+*.cyvoice
+*.wav
+*.mp3
+*.m4a
+*.apk
+*.aab
+.env
+.env.*

@@ -226,3 +226,8 @@
 -dontwarn org.eclipse.jetty.npn.NextProtoNego$Provider
 -dontwarn org.eclipse.jetty.npn.NextProtoNego$ServerProvider
 -dontwarn org.eclipse.jetty.npn.NextProtoNego
+# Preserve JNI configuration and audio classes used by the existing offline voice engine.
+-keep class com.k2fsa.sherpa.onnx.** { *; }
+# JNI resolves the concrete callback's boxed invoke([F)Ljava/lang/Integer;.
+# Keep its shape as well as its name; interface-only reachability is insufficient.
+-keep class io.cyrene.voice.core.NativeSpeechCallback { *; }

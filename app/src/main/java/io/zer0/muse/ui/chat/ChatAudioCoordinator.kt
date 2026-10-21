@@ -45,21 +45,22 @@ class ChatAudioCoordinator(
     private var lastAsrTranscript = ""
 
     /** Phase 8.7: 切换 TTS 朗读(同条消息停止,不同消息开始新朗读)。 */
-    fun toggleTts(messageId: Uuid, content: String, reportError: (String) -> Unit) {
+    fun toggleTts(messageId: Uuid, content: String, reportError: (String) -> Unit, enqueue: Boolean = false) {
         val current = accessor.snapshot.speakingMessageId
-        if (current == messageId) {
+        if (current == messageId && !enqueue) {
             ttsManager.stop()
         } else {
             val utteranceId = messageId.toString()
             accessor.coroutineScope.launch {
-                // P1-2: 长文朗读接入流式 TTS — speakStream 按句合成/播放(云端双 Channel 流水线),
-                // flushStream 冲刷尾部残句;与 [TtsManager.speak] 的串行分片朗读互为备选路径。
+                // 完整回复使用文件合成 + MediaPlayer，保持暂停/继续和队列语义。
                 if (content.isBlank()) {
                     reportError(context.getString(R.string.speech_tts_engine_not_ready)) // CONS-05: 硬编码中文迁移到字符串资源
                     return@launch
                 }
-                ttsManager.speakStream(content, utteranceId)
-                ttsManager.flushStream()
+                if (!ttsManager.speak(content, utteranceId, flush = !enqueue)) {
+                    reportError(context.getString(R.string.speech_tts_engine_not_ready))
+                    return@launch
+                }
                 if (accessor.snapshot.mediaConfig.keepReadingOnLeave) {
                     runCatching {
                         androidx.core.content.ContextCompat.startForegroundService(

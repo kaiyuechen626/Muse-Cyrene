@@ -1,27 +1,7 @@
-Muse Cyrene — public development source snapshot, 2026-10-18
-
-This directory is prepared for GitHub source hosting. It is not a verified APK
-release or a complete passing regression suite. No remote URL is invented.
-
-Four historical binary test fixtures are deliberately omitted. Their original
-paths, hashes and provenance are documented in TEST_FIXTURE_PROVENANCE.txt.
-Three RAR reader tests, one RAR integration test and the two-test market sample
-class are explicitly @Ignore annotated. ZIP/7z integration coverage is retained
-in its own test. Ignored tests are NOT passed tests. Do not remove the annotations
-without restoring reviewed fixtures and running the corresponding regressions.
-No application production code or runtime feature was removed.
-
-LICENSE, NOTICE, third-party notices and upstream attribution are retained.
-The repository starts without old Git history, credentials, APKs or local review
-outputs. This source snapshot is not a promise of cleared binary distribution:
-Junrar/ML Kit and the final runtime dependency/license inventory remain under review.
-
-The runtime input lock remains empty. Full Node/Python packaging, Release builds,
-helper signing/coexistence, upgrades and device tests remain unverified.
-Python publisher authentication evidence is not build-workflow provenance.
-Manual Cyrene updates and helper isolation have been implemented in source only.
-
-BUILDING_CYRENE.md and CYRENE_RELEASE_CHECKLIST.md describe outstanding binary
-release work. Earlier preparation/hold statements refer to the complete local
-candidate; this export excludes the held binaries and declares reduced coverage.
-No APK should be advertised as verified from this source snapshot.
+Muse Cyrene 0.2.0 / 271
+Release tag: cyrene-v0.2.0
+Current publication and acceptance record: release/PUBLICATION.md
+The owner requested publication after 0.1.0 was published.
+Historical local-candidate reports retain their original hold and unexecuted-test fields.
+Known third-party license questions remain unresolved; no additional legal clearance is asserted.
+Public source excludes personal data, signing material, speech models and the runtime AAR.

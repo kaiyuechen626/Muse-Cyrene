@@ -1,0 +1,20 @@
+{
+  "concreteClass": "Lio/cyrene/voice/core/NativeSpeechCallback;",
+  "declaredInvokeMethods": [
+    {
+      "name": "invoke",
+      "signature": "([F)Ljava/lang/Integer;",
+      "public": true,
+      "static": false,
+      "hasCode": true
+    },
+    {
+      "name": "invoke",
+      "signature": "(Ljava/lang/Object;)Ljava/lang/Object;",
+      "public": true,
+      "static": false,
+      "hasCode": true
+    }
+  ],
+  "jniSignaturePresent": true
+}

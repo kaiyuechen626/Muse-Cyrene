@@ -13,7 +13,6 @@ import io.zer0.muse.R
 import io.zer0.muse.data.MediaConfig
 import io.zer0.muse.transformer.MoodSkinParser
 import io.zer0.muse.ui.common.feedback.MuseToast
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -26,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
@@ -100,6 +100,7 @@ class TtsManager(
     private val SYNTH_PREFIX = "syn_"
 
     private val appContext = context.applicationContext
+    private val offlineVoiceEngine = io.cyrene.voice.core.LocalVoiceEngine()
     private val cacheDir: File = appContext.cacheDir
     private val ready = AtomicBoolean(false)
 
@@ -130,9 +131,12 @@ class TtsManager(
      * 当前段播完后按序继续(如"依次朗读多条消息"场景)。停止/打断时清空。
      */
     private val pendingTail = ArrayDeque<Pair<List<String>, String>>()
+    /** Queued messages claimed by the producer but not yet heard; restored on navigation. */
+    private val preparedTail = ArrayDeque<Pair<List<String>, String>>()
 
     /** v0.52: 流式朗读的句子缓冲(等完整句子再交给 TTS,避免 token 级断句拗口)。 */
     private val sentenceBuffer = StringBuilder()
+    private var localStreamId: String? = null
 
     /** 朗读状态回调: (utteranceId, isSpeaking) — UI 据此切换图标。 */
     var onStateChange: ((utteranceId: String?, isSpeaking: Boolean) -> Unit)? = null
@@ -145,7 +149,7 @@ class TtsManager(
     fun getAvailableVoices(): List<android.speech.tts.Voice> {
         return if (ready.get()) {
             @Suppress("DEPRECATION")
-            tts.voices?.toList() ?: emptyList()
+            tts.voices?.filter { !localSpeechOnly || !it.isNetworkConnectionRequired } ?: emptyList()
         } else {
             emptyList()
         }
@@ -157,6 +161,7 @@ class TtsManager(
      * 供 TTS 设置页音色选择器使用,失败返回空列表。
      */
     suspend fun listCloudVoices(): List<VoiceInfo> {
+        if (localSpeechOnly) return emptyList()
         val engine = mediaConfig.ttsEngine
         val provider = CloudTtsProvider.fromEngine(engine) ?: return emptyList()
         return cloudTtsService.listVoices(provider, mediaConfig.ttsApiKey, mediaConfig.ttsEndpoint)
@@ -186,26 +191,67 @@ class TtsManager(
     @Volatile
     private var initHintShown = false
 
-    private val tts: TextToSpeech = TextToSpeech(appContext) { status ->
-        if (status == TextToSpeech.SUCCESS) {
-            // 默认中文(系统 TTS 不支持时回退默认语言)
-            applyLanguage(Locale.CHINESE)
-            ready.set(true)
-            // v1.0.4 (P2): 同步暴露给 UI
-            _isReady.value = true
-        } else {
-            // v1.0.47: TTS init 失败多为设备无 TTS 引擎,属常见情况,从 Logger.e 降为 Logger.d 减少启动日志噪音
-            Logger.d("TtsManager", "TTS init failed: status=$status")
-            // v1.98: 移除 Toast 提示,静默处理(朗读功能不可用时用户自然知晓)
-            initFailed = true
-            // UI 需要知道“是失败”而不是“还在初始化”,否则提示会永远停在“请稍后重试”
-            _initFailed.value = true
-        }
+    // Cyrene's speech output is local even when an old backup contains cloud settings.
+    val localSpeechOnly: Boolean = io.zer0.muse.BuildConfig.APPLICATION_ID.startsWith("io.zer0.muse.cyrene")
+    private lateinit var tts: TextToSpeech
+    @Volatile
+    private var engineGeneration = 0L
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val _engineError = MutableStateFlow<String?>(null)
+    val engineError: StateFlow<String?> = _engineError.asStateFlow()
+
+    fun getAvailableEngines(): List<TextToSpeech.EngineInfo> =
+        if (::tts.isInitialized) tts.engines.orEmpty() else emptyList()
+
+    /** Also used after returning from the external engine's voice manager. */
+    fun refreshSystemEngine() {
+        stop()
+        initializeEngine()
     }
 
-    /** v1.4: synthesizeToFile 完成回调句柄(串行,一次只合成一片)。 */
-    @Volatile
-    private var synthesizeDone: CompletableDeferred<Unit>? = null
+    private fun initializeEngine() {
+        val generation = ++engineGeneration
+        synthesisRequests = SpeechSynthesisRequests()
+        ready.set(false)
+        _isReady.value = false
+        initFailed = false
+        _initFailed.value = false
+        _engineError.value = null
+        if (::tts.isInitialized) tts.shutdown()
+        val selected = mediaConfig.ttsSystemEngine
+        tts = TextToSpeech(appContext, { status ->
+            // Always post: constructor callbacks must not access a not-yet-assigned engine.
+            mainHandler.post {
+                if (generation != engineGeneration) return@post
+                val installed = selected.isBlank() || getAvailableEngines().any { it.name == selected }
+                if (status != TextToSpeech.SUCCESS || !installed) {
+                    failEngine()
+                } else {
+                    installProgressListener(generation)
+                    ready.set(true)
+                    _isReady.value = true
+                    applyConfig(mediaConfig)
+                }
+            }
+        }, selected.takeIf { it.isNotBlank() })
+        mainHandler.postDelayed({
+            if (generation == engineGeneration && !ready.get()) {
+                ++engineGeneration
+                tts.shutdown()
+                failEngine()
+            }
+        }, 15_000)
+    }
+
+    private fun failEngine() {
+        ready.set(false)
+        _isReady.value = false
+        initFailed = true
+        _initFailed.value = true
+        _engineError.value = appContext.getString(R.string.local_tts_unavailable)
+    }
+
+    private var synthesisRequests = SpeechSynthesisRequests()
 
     /** v1.4: 当前 MediaPlayer 实例(pause/resume/seekBy 操作目标)。 */
     @Volatile
@@ -244,8 +290,16 @@ class TtsManager(
     val playbackState: StateFlow<PlaybackState> = _playbackState.asStateFlow()
 
     init {
+        initializeEngine()
+    }
+
+    private fun installProgressListener(generation: Long) {
         tts.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(utteranceId: String?) {
+                if (generation != engineGeneration) return
+                if (utteranceId?.startsWith(SYNTH_PREFIX) == true && localSpeechOnly) {
+                    Logger.i("LocalSpeech", "engine_start id=$utteranceId generation=$generation")
+                }
                 // speakStream 路径才走 onStateChange;合成路径 synthesize 不触发 UI
                 if (utteranceId == null || utteranceId.startsWith(SYNTH_PREFIX)) return
                 currentUtteranceId = utteranceId
@@ -253,10 +307,12 @@ class TtsManager(
             }
 
             override fun onDone(utteranceId: String?) {
+                if (generation != engineGeneration) return
                 val id = utteranceId ?: return
                 if (id.startsWith(SYNTH_PREFIX)) {
+                    if (localSpeechOnly) Logger.i("LocalSpeech", "engine_done id=$id generation=$generation")
                     // 合成完成,唤醒等待中的 synthesizeToFile
-                    synthesizeDone?.complete(Unit)
+                    synthesisRequests.complete(id, generation)
                 } else {
                     // speakStream 单句播完
                     currentUtteranceId = null
@@ -264,22 +320,37 @@ class TtsManager(
                 }
             }
 
+            override fun onBeginSynthesis(utteranceId: String?, sampleRateInHz: Int, audioFormat: Int, channelCount: Int) {
+                if (generation == engineGeneration && utteranceId?.startsWith(SYNTH_PREFIX) == true && localSpeechOnly) {
+                    Logger.i("LocalSpeech", "audio_format id=$utteranceId rate=$sampleRateInHz format=$audioFormat channels=$channelCount")
+                }
+            }
+
             @Deprecated("Deprecated in Java")
             override fun onError(utteranceId: String?) {
-                handleSynthOrSpeakError(utteranceId)
+                if (generation == engineGeneration) handleSynthOrSpeakError(utteranceId, generation)
             }
 
             override fun onError(utteranceId: String?, errorCode: Int) {
-                handleSynthOrSpeakError(utteranceId)
+                if (generation == engineGeneration && utteranceId?.startsWith(SYNTH_PREFIX) == true && localSpeechOnly) {
+                    Logger.w("LocalSpeech", "engine_error id=$utteranceId code=$errorCode")
+                }
+                if (generation == engineGeneration) handleSynthOrSpeakError(utteranceId, generation)
+            }
+
+            override fun onStop(utteranceId: String?, interrupted: Boolean) {
+                if (generation == engineGeneration && utteranceId?.startsWith(SYNTH_PREFIX) == true) {
+                    handleSynthOrSpeakError(utteranceId, generation)
+                }
             }
         })
     }
 
     /** 统一处理合成/朗读错误回调。 */
-    private fun handleSynthOrSpeakError(utteranceId: String?) {
+    private fun handleSynthOrSpeakError(utteranceId: String?, generation: Long) {
         val id = utteranceId ?: return
         if (id.startsWith(SYNTH_PREFIX)) {
-            synthesizeDone?.completeExceptionally(RuntimeException("TTS synthesize error"))
+            synthesisRequests.fail(id, generation)
         } else {
             currentUtteranceId = null
             onStateChange?.invoke(id, false)
@@ -295,8 +366,21 @@ class TtsManager(
      * @param config 新的媒体配置
      */
     fun applyConfig(config: MediaConfig) {
-        mediaConfig = config
-        if (ready.get()) {
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            mainHandler.post { applyConfig(config) }
+            return
+        }
+        val previous = mediaConfig
+        mediaConfig = if (localSpeechOnly && config.ttsEngine != "cyrene-offline") config.copy(ttsEngine = "system") else config
+        if (previous.ttsSystemEngine != config.ttsSystemEngine) {
+            refreshSystemEngine()
+            return
+        }
+        if (previous.ttsVoiceName != config.ttsVoiceName || previous.ttsVoice != config.ttsVoice ||
+            previous.ttsEngine != mediaConfig.ttsEngine || previous.cyreneFastSynthesis != config.cyreneFastSynthesis) stop()
+        // Local file synthesis applies a config snapshot inside its serialized preparation.
+        // Do not race those calls from Main when a setting is saved.
+        if (ready.get() && !localSpeechOnly) {
             // 语速(0.5-2.0,1.0 为正常)— 影响 TTS 合成速率
             tts.setSpeechRate(globalSpeechRate())
             // 音高(0.5-2.0,1.0 为正常)
@@ -304,8 +388,8 @@ class TtsManager(
             // 语言(null 跟随系统,否则尝试切换)
             applyLanguage(globalLanguage())
             // 系统 TTS 声音(仅引擎为 system 时生效)
-            if (config.ttsVoiceName.isNotBlank() && config.ttsEngine == "system") {
-                val voice = tts.voices?.firstOrNull { it.name == config.ttsVoiceName }
+            if (config.ttsVoiceName.isNotBlank() && mediaConfig.ttsEngine == "system") {
+                val voice = getAvailableVoices().firstOrNull { it.name == config.ttsVoiceName }
                 if (voice != null) {
                     tts.setVoice(voice)
                 }
@@ -341,11 +425,11 @@ class TtsManager(
     }
 
     /** 应用语言(不支持时回退默认)。 */
-    private fun applyLanguage(locale: Locale) {
-        val result = tts.setLanguage(locale)
+    private fun applyLanguage(locale: Locale, backend: TextToSpeech = tts) {
+        val result = backend.setLanguage(locale)
         if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
             Logger.w("TtsManager", "Language $locale not available, fallback to default")
-            tts.setLanguage(Locale.getDefault())
+            backend.setLanguage(Locale.getDefault())
         }
     }
 
@@ -360,6 +444,30 @@ class TtsManager(
      * @return true 合成成功;false 失败或超时
      */
     private suspend fun synthesizeToFile(text: String, file: File): Boolean {
+        if (mediaConfig.ttsEngine == "cyrene-offline") {
+            _engineError.value = null
+            val voiceKey = mediaConfig.ttsVoice
+            val synthesisSteps = if (mediaConfig.cyreneFastSynthesis) 4 else 8
+            if (localSpeechOnly) Logger.i("LocalSpeech", "embedded_start file=${file.name} chars=${text.length} steps=$synthesisSteps")
+            return kotlinx.coroutines.withContext(Dispatchers.IO) {
+                val job = coroutineContext[Job]
+                try {
+                    val parts = voiceKey.split('/')
+                    require(parts.size == 2 && parts.all { it.matches(Regex("[a-zA-Z0-9_-]{1,80}")) })
+                    val root = File(appContext.filesDir, "cyrene-voice-packs")
+                    val pack = File(root, parts[0])
+                    val role = io.cyrene.voice.core.VoicePackStore(root).roles(pack).first { it.id == parts[1] }
+                    val ok = offlineVoiceEngine.synthesize(pack, role, text, file, numSteps = synthesisSteps, cancelled = { job?.isActive == false })
+                    if (localSpeechOnly) Logger.i("LocalSpeech", "embedded_result file=${file.name} completed=$ok bytes=${file.length()}")
+                    ok && file.isFile && file.length() > 44
+                } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    if (localSpeechOnly) Logger.w("LocalSpeech", "embedded_failed file=${file.name}")
+                    false
+                }
+            }
+        }
         // v1.97: 云端 TTS 引擎走 CloudTtsService 路径
         if (mediaConfig.ttsEngine != "system") {
             val cloudOk = cloudTtsService.synthesizeToFile(
@@ -389,36 +497,76 @@ class TtsManager(
      * v1.104: 系统 TTS 合成(从 synthesizeToFile 抽出,供云端失败回退复用)。
      */
     private suspend fun synthesizeWithSystemTts(text: String, file: File): Boolean {
-        if (!ready.get()) {
-            Logger.w("TtsManager", "synthesizeToFile: TTS not ready")
-            return false
+        if (!ready.get()) return false
+        // Capture before dispatch: an old cancelled worker must never use a replacement engine.
+        val backend = tts
+        val config = mediaConfig
+        val requests = synthesisRequests
+        val request = requests.begin(SYNTH_PREFIX + System.nanoTime(), engineGeneration)
+        if (localSpeechOnly) Logger.i("LocalSpeech", "request_start id=${request.id} file=${file.name} chars=${text.length} generation=${request.generation}")
+        return try {
+            kotlinx.coroutines.withContext(Dispatchers.IO) {
+                synthesizeWithSystemTtsOnWorker(text, file, backend, config, requests, request)
+            }
+        } finally { requests.finish(request) }
+    }
+
+    /** Engine Binder calls can wait on a busy engine; never hold the playback/UI thread. */
+    private suspend fun synthesizeWithSystemTtsOnWorker(
+        text: String,
+        file: File,
+        backend: TextToSpeech,
+        config: MediaConfig,
+        requests: SpeechSynthesisRequests,
+        request: SpeechSynthesisRequests.Request,
+    ): Boolean {
+        fun checkCurrent() {
+            if (request.generation != engineGeneration || !requests.isCurrent(request)) {
+                throw kotlinx.coroutines.CancellationException("Speech request replaced")
+            }
         }
-        // 确保合成参数已应用(避免首次朗读用默认值)
-        if (globalSpeechRate() != 1.0f || globalPitch() != 1.0f) {
-            tts.setSpeechRate(globalSpeechRate())
-            tts.setPitch(globalPitch())
+        kotlin.coroutines.coroutineContext.ensureActive()
+        checkCurrent()
+        val result = requests.prepare(request) {
+            backend.setSpeechRate(config.ttsSpeechRate.coerceIn(0.5f, 2f))
+            backend.setPitch(config.ttsPitch.coerceIn(0.5f, 2f))
+            val language = config.ttsLanguage?.takeIf { it.isNotBlank() }?.let(::parseLocale) ?: Locale.getDefault()
+            applyLanguage(language, backend)
+            val voices = backend.voices.orEmpty().filter { !localSpeechOnly || !it.isNetworkConnectionRequired }
+            val requested = config.ttsVoiceName
+            val voice = if (requested.isNotBlank()) voices.firstOrNull { it.name == requested }
+                else backend.voice?.takeIf { !localSpeechOnly || !it.isNetworkConnectionRequired }
+                    ?: voices.firstOrNull { it.locale.language == language.language }
+            kotlin.coroutines.coroutineContext.ensureActive()
+            checkCurrent()
+            if (voice == null || backend.setVoice(voice) != TextToSpeech.SUCCESS) {
+                _engineError.value = appContext.getString(R.string.local_tts_voice_unavailable)
+                return@prepare TextToSpeech.ERROR
+            }
+            kotlin.coroutines.coroutineContext.ensureActive()
+            checkCurrent()
+            _engineError.value = null
+            if (localSpeechOnly) Logger.i("LocalSpeech", "request_submit id=${request.id}")
+            backend.synthesizeToFile(text, Bundle(), file, request.id)
         }
-        applyLanguage(globalLanguage())
-        val deferred = CompletableDeferred<Unit>()
-        synthesizeDone = deferred
-        val utteranceId = SYNTH_PREFIX + System.nanoTime()
-        // synthesizeToFile 重载:(CharSequence, Bundle, File, String) — 传 File 而非路径
-        val result = tts.synthesizeToFile(text, Bundle(), file, utteranceId)
+        if (localSpeechOnly) Logger.i("LocalSpeech", "request_queued id=${request.id} result=$result")
         if (result != TextToSpeech.SUCCESS) {
-            synthesizeDone = null
             Logger.w("TtsManager", "synthesizeToFile failed: result=$result")
             return false
         }
         return try {
-            // 30 秒超时兜底(单片 150 字符通常数秒内完成)
-            val ok = withTimeoutOrNull(30_000) { deferred.await() } != null
-            if (!ok) Logger.w("TtsManager", "synthesizeToFile timeout: ${text.take(20)}...")
-            ok
+            // Preserve the installed Cyrene build's allowance for local model startup.
+            val ok = withTimeoutOrNull(if (localSpeechOnly) 120_000 else 30_000) { request.completion.await() } != null
+            if (localSpeechOnly) Logger.i("LocalSpeech", "request_result id=${request.id} completed=$ok bytes=${file.length()}")
+            if (!ok && request.generation == engineGeneration && requests.isCurrent(request)) {
+                requests.prepare(request) { backend.stop() }
+            }
+            ok && file.isFile && file.length() > 44
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             Logger.e("TtsManager", "synthesizeToFile error: ${e.message}")
             false
-        } finally {
-            synthesizeDone = null
         }
     }
 
@@ -426,7 +574,7 @@ class TtsManager(
      * 朗读文本(v1.4 改造:分片 + 合成到文件 + MediaPlayer 串行播放)。
      *
      * 兼容旧调用方:保留 utteranceId 参数(用于 UI 高亮当前播放消息)。
-     * 内部用 [TextChunker] 按标点分片,串行合成 + 播放,支持暂停/恢复/快进/速度。
+     * 按句分片,串行合成并与播放重叠,支持暂停/恢复/快进/速度。
      *
      * @param text 待朗读的纯文本(含 Markdown 会被 [stripMarkdown] 清理)
      * @param utteranceId 跟踪 id(通常传消息 id,用于 UI 切换图标)
@@ -448,7 +596,10 @@ class TtsManager(
         val clean = MoodSkinParser.cleanForExport(stripMarkdown(text)).trim()
         if (clean.isEmpty()) return false
         // 用 TextChunker 按标点分片
-        val chunks = TextChunker.chunk(clean)
+        val localClone = mediaConfig.ttsEngine == "cyrene-offline" ||
+            (mediaConfig.ttsEngine == "system" &&
+                mediaConfig.ttsSystemEngine.ifBlank { tts.defaultEngine } == "io.cyrene.voice")
+        val chunks = if (localClone) LocalSpeechChunker.chunk(clean) else TextChunker.chunk(clean)
         if (chunks.isEmpty()) return false
         // 新请求处理:
         // - flush=true(默认): 打断旧请求,立即播新内容
@@ -471,19 +622,19 @@ class TtsManager(
     }
 
     /**
-     * v1.4: 启动串行播放协程(合成一片 → 播放一片 → 下一片)。
+     * 启动有界预合成队列,播放当前句时准备后续句,支持跨消息预合成。
      *
      * 协程在 [playbackScope] (Main 线程)执行,MediaPlayer 操作必须主线程。
      * 协程被 cancel 时(stop / 新 speak),MediaPlayer 释放、临时文件清理。
      */
-    private fun startPlayback(chunks: List<String>, utteranceId: String) {
+    private fun startPlayback(chunks: List<String>, utteranceId: String, startIndex: Int = 0) {
         playbackJob?.cancel()
         startPositionUpdates()
         playbackJob = playbackScope.launch {
             updateState {
                 it.copy(
                     status = PlaybackStatus.Playing,
-                    currentChunkIndex = 0,
+                    currentChunkIndex = startIndex,
                     totalChunks = chunks.size,
                     positionMs = 0L,
                     durationMs = 0L,
@@ -492,54 +643,64 @@ class TtsManager(
             // v2.x: 排队追加支持 — 主体按段播放,段间消费 [pendingTail](flush=false 追加的后续分段)
             var segment = chunks
             var segmentUtterance = utteranceId
+            var index = startIndex
             while (isActive) {
-                playChunks(segment, segmentUtterance)
+                try {
+                    SpeechPrefetch.play(next = {
+                        if (index >= segment.size) {
+                            val next = pendingTail.removeFirstOrNull()
+                            if (next != null) {
+                                preparedTail.addLast(next)
+                                segment = next.first
+                                segmentUtterance = next.second
+                                index = 0
+                            }
+                        }
+                        if (index >= segment.size) null
+                        else ReadingChunk(segment, segmentUtterance, index++)
+                    }, prepare = { chunk -> prepareChunk(chunk.chunks[chunk.index]) }, consume = { chunk, file ->
+                        // Preparation may already be in the next message. Highlight only what plays.
+                        val changedMessage = currentUtteranceId != chunk.utteranceId
+                        if (chunk.index == 0 && preparedTail.firstOrNull()?.second == chunk.utteranceId) preparedTail.removeFirst()
+                        currentUtteranceId = chunk.utteranceId
+                        currentChunks = chunk.chunks
+                        updateState { it.copy(currentChunkIndex = chunk.index, totalChunks = chunk.chunks.size, positionMs = 0L, durationMs = 0L) }
+                        if (changedMessage) onStateChange?.invoke(chunk.utteranceId, true)
+                        playWithMediaPlayer(file)
+                    })
+                } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    _engineError.value = _engineError.value ?: appContext.getString(R.string.local_tts_synthesis_failed)
+                    MuseToast.show(_engineError.value.orEmpty(), 3000)
+                    pendingTail.clear()
+                    preparedTail.clear()
+                    break
+                }
                 val next = if (isActive) pendingTail.removeFirstOrNull() else null
                 if (next == null) break
                 segment = next.first
                 segmentUtterance = next.second
-                currentUtteranceId = segmentUtterance
-                currentChunks = segment
-                updateState {
-                    it.copy(
-                        currentChunkIndex = 0,
-                        totalChunks = segment.size,
-                        positionMs = 0L,
-                        durationMs = 0L,
-                    )
-                }
-                onStateChange?.invoke(segmentUtterance, true)
+                index = 0
             }
             // 全部播完
             if (isActive) {
                 updateState { it.copy(status = PlaybackStatus.Ended, positionMs = it.durationMs) }
+                val finishedId = currentUtteranceId
                 currentUtteranceId = null
-                onStateChange?.invoke(segmentUtterance, false)
+                onStateChange?.invoke(finishedId, false)
             }
         }
     }
 
-    /**
-     * v2.x: 播放一段分片(合成一片 → 播一片),供 [startPlayback] 主路径与排队续播共用。
-     *
-     * L-SP3: 用 try-finally 确保临时 wav 文件在任何路径下都被清理,
-     * 含: 合成失败(continue)、协程取消(CancellationException 传播时 finally 执行)、正常播放完成。
-     * 取消由 suspend 调用链自然传播(synthesizeToFile / playWithMediaPlayer),无需显式检查。
-     */
-    private suspend fun playChunks(chunks: List<String>, utteranceId: String) {
-        for ((index, chunk) in chunks.withIndex()) {
-            updateState { it.copy(currentChunkIndex = index, positionMs = 0L, durationMs = 0L) }
-            // 合成到临时 wav 文件
-            val file = File(cacheDir, "tts_chunk_${utteranceId}_$index.wav")
-            try {
-                val ok = synthesizeToFile(chunk, file)
-                if (!ok) continue
-                // 用 MediaPlayer 播放(暂停时协程挂起在 await completion)
-                playWithMediaPlayer(file)
-            } finally {
-                file.delete()
-            }
-        }
+    private data class ReadingChunk(val chunks: List<String>, val utteranceId: String, val index: Int)
+
+    private suspend fun prepareChunk(text: String): File {
+        val file = File.createTempFile("tts_prefetch_", ".wav", cacheDir)
+        try {
+            check(synthesizeToFile(text, file))
+            return file
+        } catch (e: Exception) { file.delete(); throw e }
     }
 
     /**
@@ -560,14 +721,16 @@ class TtsManager(
             try {
                 mp.setDataSource(file.absolutePath)
                 mp.setOnPreparedListener { player ->
+                    if (!cont.isActive || mediaPlayer !== player) return@setOnPreparedListener
                     mediaPrepared = true
                     // 应用播放速度(API 23+)
-                    if (!readingPaused && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (!readingPaused && playbackSpeed != 1f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         runCatching {
                             player.playbackParams = player.playbackParams.setSpeed(playbackSpeed)
                         }.onFailure { Logger.w("TtsManager", "apply playback speed failed: ${it.message}", it) }
                     }
                     if (!readingPaused) player.start()
+                    if (localSpeechOnly) Logger.i("LocalSpeech", "play_ready file=${file.name} durationMs=${player.duration} paused=$readingPaused")
                     updateState {
                         it.copy(
                             status = if (readingPaused) PlaybackStatus.Paused else PlaybackStatus.Playing,
@@ -577,6 +740,7 @@ class TtsManager(
                     }
                 }
                 mp.setOnCompletionListener { player ->
+                    if (localSpeechOnly) Logger.i("LocalSpeech", "play_done file=${file.name}")
                     player.release()
                     if (mediaPlayer === player) mediaPlayer = null
                     if (cont.isActive) cont.resumeWith(Result.success(Unit))
@@ -587,7 +751,7 @@ class TtsManager(
                     MuseToast.show(appContext.getString(R.string.speech_tts_play_error), 2500)
                     runCatching { player.release() }
                     if (mediaPlayer === player) mediaPlayer = null
-                    if (cont.isActive) cont.resumeWith(Result.success(Unit))
+                    if (cont.isActive) cont.resumeWith(Result.failure(IllegalStateException("MediaPlayer error: $what/$extra")))
                     true
                 }
                 mp.prepareAsync()
@@ -595,7 +759,7 @@ class TtsManager(
                 Logger.e("TtsManager", "playWithMediaPlayer setup failed: ${e.message}")
                 runCatching { mp.release() }
                 if (mediaPlayer === mp) mediaPlayer = null
-                if (cont.isActive) cont.resumeWith(Result.success(Unit))
+                if (cont.isActive) cont.resumeWith(Result.failure(e))
                 return@suspendCancellableCoroutine
             }
             cont.invokeOnCancellation {
@@ -684,6 +848,7 @@ class TtsManager(
         val chunks = currentChunks
         if (chunks.isEmpty() || state.currentChunkIndex >= chunks.size - 1) return
         // 取消当前片播放,启动下一片
+        restorePreparedTail()
         stopPlayback()
         startPlaybackFromIndex(chunks, state.currentChunkIndex + 1)
     }
@@ -695,6 +860,7 @@ class TtsManager(
         val state = _playbackState.value
         val chunks = currentChunks
         if (chunks.isEmpty() || state.currentChunkIndex <= 0) return
+        restorePreparedTail()
         stopPlayback()
         startPlaybackFromIndex(chunks, state.currentChunkIndex - 1)
     }
@@ -702,34 +868,11 @@ class TtsManager(
     /** 从指定分片索引开始串行播放(供 nextChunk/previousChunk 复用)。 */
     private fun startPlaybackFromIndex(chunks: List<String>, startIndex: Int) {
         val utteranceId = currentUtteranceId ?: return
-        startPositionUpdates()
-        playbackJob = playbackScope.launch {
-            updateState {
-                it.copy(
-                    status = PlaybackStatus.Playing,
-                    currentChunkIndex = startIndex,
-                    totalChunks = chunks.size,
-                    positionMs = 0L,
-                    durationMs = 0L,
-                )
-            }
-            for (index in startIndex until chunks.size) {
-                if (!isActive) return@launch
-                updateState { it.copy(currentChunkIndex = index, positionMs = 0L, durationMs = 0L) }
-                val file = File(cacheDir, "tts_chunk_${utteranceId}_$index.wav")
-                try {
-                    val ok = synthesizeToFile(chunks[index], file)
-                    if (!ok) continue
-                    if (!isActive) return@launch
-                    playWithMediaPlayer(file)
-                } finally {
-                    file.delete()
-                }
-            }
-            updateState { it.copy(status = PlaybackStatus.Ended, positionMs = it.durationMs) }
-            currentUtteranceId = null
-            onStateChange?.invoke(utteranceId, false)
-        }
+        startPlayback(chunks, utteranceId, startIndex)
+    }
+
+    private fun restorePreparedTail() {
+        while (preparedTail.isNotEmpty()) pendingTail.addFirst(preparedTail.removeLast())
     }
 
     /**
@@ -766,6 +909,14 @@ class TtsManager(
      */
     fun speakStream(chunk: String, utteranceId: String) {
         if (chunk.isEmpty()) return
+        if (localSpeechOnly) {
+            if (localStreamId != utteranceId) {
+                stop()
+                localStreamId = utteranceId
+            }
+            sentenceBuffer.append(chunk)
+            return
+        }
         // 云端 TTS 路径:双 Channel 流水线
         if (mediaConfig.ttsEngine != "system") {
             // 新消息打断旧流(不同 utteranceId 视为新一段流式朗读)
@@ -997,6 +1148,14 @@ class TtsManager(
      * 把缓冲区里未到句号的残余文本交给 TTS 读完。
      */
     fun flushStream() {
+        if (localSpeechOnly) {
+            val text = sentenceBuffer.toString()
+            val id = localStreamId ?: return
+            sentenceBuffer.clear()
+            localStreamId = null
+            speak(text, id)
+            return
+        }
         // 云端 TTS:把残余文本送入管线后关闭合成 Channel,触发自然收尾
         if (mediaConfig.ttsEngine != "system") {
             if (sentenceBuffer.isNotEmpty()) {
@@ -1207,9 +1366,12 @@ class TtsManager(
 
     /** v1.4: 内部停止 — resetState=true 时把 playbackState 重置为 Idle(对外停止)。 */
     private fun stopInternal(resetState: Boolean) {
+        localStreamId = null
+        synthesisRequests.cancel()
         readingPaused = false
         // v2.x: 停止即清空排队追加缓冲(不再续播)
         pendingTail.clear()
+        preparedTail.clear()
         stopPlayback()
         stopCloudStream()
         // 停流式朗读
@@ -1226,6 +1388,9 @@ class TtsManager(
 
     /** v1.4: 停止分片播放(取消协程 + 释放 MediaPlayer)。 */
     private fun stopPlayback() {
+        if (synthesisRequests.cancel()) {
+            tts.stop()
+        }
         playbackJob?.cancel()
         playbackJob = null
         positionUpdateJob?.cancel()
@@ -1305,6 +1470,7 @@ class TtsManager(
 
     /** 释放资源(应用退出时调用)。 */
     fun shutdown() {
+        ++engineGeneration
         stopInternal(resetState = true)
         // H-SP1 修复: 取消 playbackScope 自身(SupervisorJob),而非仅取消其子 Job。
         // 原先只 stopInternal 取消 playbackJob/positionUpdateJob,playbackScope 的 SupervisorJob

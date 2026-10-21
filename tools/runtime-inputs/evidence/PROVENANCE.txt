@@ -1,0 +1,26 @@
+Runtime evidence snapshot — 2026-10-18
+
+Termux indexes were retrieved from packages.termux.dev/apt/termux-main/dists/stable/.
+Their hashes and lengths match the signed InRelease. GPG verification passed for
+CC72CF8BA7DBFA0182877D045A897D96E57CF20C.
+Public key source (independent of the package server):
+https://raw.githubusercontent.com/termux/termux-packages/5de2ac4b0bfb23bb8f239e29e3775cfecffd914c/packages/termux-keyring/termux-autobuilds.gpg
+This fixed snapshot supports this release's inputs, not automatic latest-version
+or indefinite revocation assurances. Updates require a new reviewed snapshot.
+
+Python bundles originate from the exact archive URLs plus .sigstore recorded in
+inputs.lock.json. Both archives and publisher signatures were verified separately.
+Expected identity is fixed by https://www.python.org/downloads/metadata/sigstore/:
+hugo@python.org, issuer https://github.com/login/oauth, for Python 3.14.
+Build-workflow provenance remains unconfirmed. Publisher authentication and file
+integrity suffice for this consumer build's input verification; this does not
+claim a reproducible upstream build or settle downstream licensing/compatibility.
+
+Sigstore 4.5.0 installation requirements are copied verbatim from:
+https://raw.githubusercontent.com/sigstore/sigstore-python/6adf8c72cfa9615dc4c63b0518edeb63a166e439/install/requirements.txt
+SHA256: 839290756a7dc553675a726e36aeb19f245578083ef2a6269d17991e88a707c4
+Verification uses the pinned client's trusted Sigstore root, not a root supplied
+by the downloaded bundle. Offline verification retains signature, identity,
+certificate and transparency checks; it does not refresh trusted metadata.
+
+These are input-authentication records, not APK release acceptance or licensing clearance.

@@ -1,0 +1,141 @@
+{
+  "preparedAt": "2026-10-21T19:13:14.159967+08:00",
+  "status": "LOCAL_CANDIDATE_ON_HOLD",
+  "version": "0.2.0",
+  "versionCode": 271,
+  "build": {
+    "result": "passed",
+    "duration": "23m37s",
+    "variant": "signed Release",
+    "selectedTestsPassed": 27,
+    "lintVital": "passed",
+    "fullLintRun": false,
+    "fullTestSuiteRun": false,
+    "otherOutputs": "x86_64 generated, not validated or included in candidate bundle"
+  },
+  "apk": {
+    "file": "app-arm64-v8a-release.apk",
+    "sha256": "080491fe28649629c3abd6de4e59e677d65f4a99ea775db20ab32788b41c2e28",
+    "versionName": "0.2.0",
+    "versionCode": 271,
+    "applicationId": "io.zer0.muse.cyrene",
+    "abi": "arm64-v8a",
+    "debuggable": false,
+    "signerSha256": "f11844ed7ab467de465b38733385b632a5612859e184f6aaf9176908a9c69b5d",
+    "signatureVerified": true,
+    "zipAlignment16KB": "passed",
+    "elf16KBUnsupportedOrUnverifiedLibraries": [
+      "lib/arm64-v8a/libimage_processing_util_jni.so"
+    ],
+    "sameSignedCyreneAccessibilityProvider": true,
+    "packagedResourcesVerified": {
+      "assetHashes": 7,
+      "otherBaselineAssetHashes": 222,
+      "runtimeAssetHashes": 2
+    },
+    "baselineNativeLibrariesPresent": 83,
+    "updatedLicenseManifestCheckedAgainstCurrentSource": true,
+    "unchangedOtherBaselineAssetsVerified": 221,
+    "regeneratedProfilesPresent": 2,
+    "speechLicenseTextsVerified": true,
+    "noPersonalVoicePackBundled": true,
+    "deviceTestsThisVersion": "not executed",
+    "binaryRedistributionApproved": false,
+    "publishAllowed": false,
+    "elfLimitationInheritedByteIdenticalFrom019": true
+  },
+  "jni": {
+    "concreteClass": "Lio/cyrene/voice/core/NativeSpeechCallback;",
+    "declaredInvokeMethods": [
+      {
+        "name": "invoke",
+        "signature": "([F)Ljava/lang/Integer;",
+        "public": true,
+        "static": false,
+        "hasCode": true
+      },
+      {
+        "name": "invoke",
+        "signature": "(Ljava/lang/Object;)Ljava/lang/Object;",
+        "public": true,
+        "static": false,
+        "hasCode": true
+      }
+    ],
+    "jniSignaturePresent": true
+  },
+  "tests": {
+    "selectedPureUnitTests": 27,
+    "passed": 27,
+    "fullSuiteRun": false,
+    "deviceTestsRun": false,
+    "suites": [
+      {
+        "name": "io.cyrene.voice.core.NativeSpeechCallbackTest",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "io.zer0.muse.ui.chat.AutoReadReplyGateTest",
+        "tests": "2",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "io.zer0.muse.ui.chat.ChatAudioCoordinatorVoiceTest",
+        "tests": "4",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "io.zer0.muse.ui.chat.LocalReadingTest",
+        "tests": "3",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "io.zer0.muse.ui.speech.LocalSpeechChunkerTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "io.zer0.muse.ui.speech.SpeechPrefetchTest",
+        "tests": "5",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "name": "io.zer0.muse.ui.speech.SpeechSynthesisRequestsTest",
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      }
+    ]
+  },
+  "productionAndBuildSourceFilesPreserved": 2046,
+  "resolvedReleaseComponents": 357,
+  "sourceAndBackupChanges": "Only the separate release-prep tree was edited; protected backups and accepted working source are retained",
+  "phoneTestsThisVersion": "not executed",
+  "phoneInstalledVersionChanged": false,
+  "githubUploadPerformed": false,
+  "githubReleaseCreated": false,
+  "publishAllowed": false,
+  "binaryRedistributionApproved": false,
+  "openItems": [
+    "Confirm 0.1.0 is published first, then continue the user-requested 0.2.0 release flow",
+    "Recheck actual public 0.1.0 package, signing certificate and increasing versionCode",
+    "Resolve Junrar / GPL and ML Kit binary distribution review items",
+    "Complete runtime license / corresponding source closure",
+    "Run final 0.2.0 device upgrade, speech and whole-application acceptance",
+    "Resolve or explicitly restrict/document pre-existing 16 KB ELF compatibility limitation"
+  ]
+}

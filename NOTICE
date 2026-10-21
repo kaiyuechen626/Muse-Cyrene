@@ -83,3 +83,17 @@ held test fixtures, and the full Node/Python runtime license closure remain
 publication blockers. Test/build-only entries and conditional LeakCanary must
 not be represented as confirmed Cyrene Release contents. Legal resource merging
 does not replace component notices, corresponding-source evidence or APK review.
+
+================================================================================
+Muse Cyrene 0.2.0 local speech modifications — 2026-10-21
+Cyrene application changes: GPL-3.0-or-later. Original Muse copyright retained.
+Local speech uses sherpa-onnx / ZipVoice with eSpeak NG and ONNX Runtime.
+Their licenses and applicable source obligations remain separate. License texts
+are retained under app/src/main/assets/licenses/cyrene-local-voice/.
+No cloned voice, voice-cloning model weight, reference recording or transcript is distributed
+with this source preparation or APK. Binary distribution remains on hold; see
+CYRENE_LICENSE_REVIEW.md.
+
+Publication status update, 2026-10-21: The owner requested the 0.2.0 release after
+0.1.0 publication. Historical hold wording above describes preparation time.
+Unresolved license questions are not cleared by publication. See release/PUBLICATION.md.

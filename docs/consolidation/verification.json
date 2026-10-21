@@ -1,0 +1,105 @@
+{
+  "baselineCommit": "0b94f4ab9c96a87419a53a739c8d12d0425f8535",
+  "version": "0.1.9",
+  "versionCode": 270,
+  "build": "Release succeeded in 21m7s; offline runtime verification, R8 and lintVital retained",
+  "selectedTestSuites": [
+    {
+      "name": "io.cyrene.voice.core.NativeSpeechCallbackTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0"
+    },
+    {
+      "name": "io.zer0.muse.ui.chat.AutoReadReplyGateTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0"
+    },
+    {
+      "name": "io.zer0.muse.ui.chat.ChatAudioCoordinatorVoiceTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0"
+    },
+    {
+      "name": "io.zer0.muse.ui.chat.LocalReadingTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0"
+    },
+    {
+      "name": "io.zer0.muse.ui.speech.LocalSpeechChunkerTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0"
+    },
+    {
+      "name": "io.zer0.muse.ui.speech.SpeechPrefetchTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0"
+    },
+    {
+      "name": "io.zer0.muse.ui.speech.SpeechSynthesisRequestsTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0"
+    }
+  ],
+  "selectedTestsPassed": 27,
+  "apkBaselineVerification": {
+    "unchangedBaselineFiles": 2488,
+    "retainedModifiedFiles": 7,
+    "retainedAddedFiles": 19,
+    "unexpectedAppSourceFiles": [],
+    "packagedWebAssetsVerified": 7,
+    "otherBaselineAssetsVerified": 222,
+    "regeneratedProfilesPresent": 2,
+    "runtimeArchivesVerified": 2,
+    "baselineNativeLibrariesPresent": 83,
+    "apkSha256": "178f4b3508f208b67da0e9dbe615c7a000de58d8d6e236543a8a2263b3fc4286"
+  },
+  "jniVerification": {
+    "concreteClass": "Lio/cyrene/voice/core/NativeSpeechCallback;",
+    "declaredInvokeMethods": [
+      {
+        "name": "invoke",
+        "signature": "([F)Ljava/lang/Integer;",
+        "public": true,
+        "static": false,
+        "hasCode": true
+      },
+      {
+        "name": "invoke",
+        "signature": "(Ljava/lang/Object;)Ljava/lang/Object;",
+        "public": true,
+        "static": false,
+        "hasCode": true
+      }
+    ],
+    "jniSignaturePresent": true
+  },
+  "signerSha256": "f11844ed7ab467de465b38733385b632a5612859e184f6aaf9176908a9c69b5d",
+  "zipAlignment16KB": "passed",
+  "protectedBackupCheck": {
+    "protectedBackup": "D:\\muse update\\Muse-Cyrene-0.1.0-consolidated",
+    "checkedSourceFiles": 2525,
+    "changedSourceFiles": [],
+    "unchangedAfterProtectionInstruction": true
+  },
+  "deviceUpgrade": "install -r Success; firstInstallTime unchanged; launch ok",
+  "userPhoneAcceptance": "Original chats, original voice, speech playback, pause/resume and background playback all confirmed normal",
+  "latestVoiceTrial": {
+    "firstPlaybackAfterSeconds": 7.113,
+    "interFileGapSeconds": 0.019,
+    "steps": 4,
+    "bothFilesCompleted": true
+  },
+  "limits": [
+    "Selected tests, not full suite; unavailable Robolectric native runtime excluded by test-only init script",
+    "No exhaustive whole-application manual regression",
+    "x86_64 package not tested on a real device",
+    "No fresh real DeepSeek API reply automatic-read test in this reconstruction run"
+  ]
+}
