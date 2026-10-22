@@ -1,0 +1,26 @@
+{
+  "versionName": "0.3.0-lan.2",
+  "versionCode": 273,
+  "apk": "Muse-Cyrene-0.3.0-lan.2-arm64-v8a.apk",
+  "bytes": 105574145,
+  "sha256": "96c81b78518dc2d1baae7d77a4dd73039c3a9db95f86ecaf0d6b23cfcafb3656",
+  "signerSha256": "f11844ed7ab467de465b38733385b632a5612859e184f6aaf9176908a9c69b5d",
+  "releaseDebuggable": false,
+  "build": "BUILD SUCCESSFUL",
+  "desktopTests": {
+    "pass": 81,
+    "fail": 0
+  },
+  "phoneUsbTests": {
+    "pass": 5,
+    "fail": 0
+  },
+  "phoneWifiTests": {
+    "pass": 1,
+    "fail": 0
+  },
+  "browserValidation": "同名提示、设定预览、网络失败重试、合并与分别保留均通过，无页面错误",
+  "installedApkMatches": true,
+  "publication": "prerelease; validation performed locally",
+  "scope": "isolated LAN acceptance only; historical voice/all-app checks not rerun"
+}

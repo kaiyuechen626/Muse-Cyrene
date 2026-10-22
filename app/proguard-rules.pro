@@ -51,6 +51,11 @@
 # ============================================================================
 -dontwarn androidx.room.paging.**
 -keep class androidx.room.RoomDatabase { *; }
+-keep class androidx.room.Room { *; }
+-keep class androidx.room.RoomDatabase$Builder { *; }
+# Release instrumentation uses the public tracing API, whose static methods
+# would otherwise be completely inlined out of the target APK.
+-keep class androidx.tracing.** { *; }
 -keep @androidx.room.Entity class *
 -keepclassmembers @androidx.room.Entity class * { *; }
 

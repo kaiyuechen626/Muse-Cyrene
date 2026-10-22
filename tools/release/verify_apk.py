@@ -93,7 +93,7 @@ def main():
         'unchangedOtherBaselineAssetsVerified': len(web.get('otherBaselineAssetHashes', {})) - int('assets/licenses/manifest.json' in web.get('otherBaselineAssetHashes', {})),
         'regeneratedProfilesPresent': len(web.get('regeneratedAssetNames', [])),
         'speechLicenseTextsVerified': True, 'noPersonalVoicePackBundled': True,
-        'deviceTestsThisVersion': 'not executed', 'binaryRedistributionApproved': False,
+        'deviceTestsThisVersion': profile.get('deviceAcceptance', 'not executed'), 'binaryRedistributionApproved': False,
         'publishAllowed': False,
     }
     args.report.parent.mkdir(parents=True, exist_ok=True)

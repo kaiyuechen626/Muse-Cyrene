@@ -24,3 +24,7 @@ app/src/main/java/io/zer0/muse/ui/chat/ChatAudioCoordinator.kt -text
 app/src/main/java/io/zer0/muse/ui/settings/MediaSettingsPage.kt -text
 app/src/main/java/io/zer0/muse/ui/speech/TtsManager.kt -text
 app/src/main/res/values/strings_local_tts.xml -text
+
+# Current corresponding-source manifests hash exact shipped bytes. Preserve
+# those bytes when importing the prepared repository and when checking it out.
+* -text

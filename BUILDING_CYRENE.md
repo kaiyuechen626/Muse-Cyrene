@@ -1,44 +1,35 @@
-> 状态更新（2026-10-21）：以下保留构建或核对时的历史记录；0.1.0 已发布，所有者已要求上传 0.2.0。已有验收复用与当前状态见 [release/PUBLICATION.md](release/PUBLICATION.md)。原未解决项及未执行测试未改写为通过。
+# Muse Cyrene 0.3.0-lan.2 构建说明
 
-# Muse Cyrene 0.2.0 本地候选构建
+本版包名 `io.zer0.muse.cyrene`，版本代码 273，发行目标 ARM64。构建脚本仅生成本地产物，不自动推送或创建 Release。
 
-本说明取代早期 0.1.0 准备说明。`REBUILD_STATUS.md` 及 `docs/consolidation/verification.json` 是此前 0.1.9 的历史证据；当前候选结果以 `release/verification.json` 为准。
+## 环境与依赖
 
-## 环境和输入
+JDK 21、Android SDK / Build Tools 36、NDK 27.0.12077973、CMake 3.22.1、项目 Gradle Wrapper。设置 JAVA_HOME、ANDROID_HOME 或不提交的 local.properties。Python 3.11+ 用于源码校验；固定 Sigstore 依赖与运行时证据见 tools/runtime-inputs/README.md。
 
-需要 JDK 21、Android SDK 36、Build Tools 36.0.0、NDK 27.0.12077973、CMake 3.22.1 及项目自带 Gradle Wrapper。用 `JAVA_HOME`、`ANDROID_HOME` 或不提交的 `local.properties` 配置本机路径。Python 3.11+ 用于源码/发布校验；运行时验证需要 `tools/runtime-inputs/README.md` 所述固定 Sigstore 依赖和验证环境。
+源码保留必需内置网页产物。重建网页时使用 Node.js 22，在 web 中运行 npm ci、npm run build，并核对资源，不得缺失网页后仍打包。
 
-源码中提供经过校验恢复的内置网页产物。重新生成时在 `web` 目录执行 `npm ci` 与 `npm run build`（Node.js 22/npm），并核对网页资源。不得在缺失网页客户端时产出缩水 APK。
+语音 AAR 不进入公开源码。运行 `python tools/release/fetch-voice-runtime.py`，再用 `--verify-only` 核对官方固定版本和 SHA-256。Node/npm/Python 双架构输入、证据、组装和验证按 tools/runtime-inputs 完成；Gradle 的完整运行时及逐文件摘要门禁保持启用。生成的运行时不进入 Git。
 
-语音 AAR 不进入公开源码包。先执行：
+## 签名与构建
 
-```powershell
-python tools/release/fetch-voice-runtime.py
-python tools/release/fetch-voice-runtime.py --verify-only
-```
+覆盖升级须使用现有合法持有的同一签名私钥，在不提交的 keystore.properties 中配置 storeFile、storePassword、keyAlias、keyPassword。新开发者使用自己的本地签名不能覆盖其他人的原签名安装；不要自动卸载或清除数据。主应用及无障碍 Provider 必须同签名。
 
-它仅获取官方 sherpa-onnx v1.13.8 静态 ONNX Runtime AAR，并固定 SHA-256；不能用未知二进制替代。
-
-Node/npm/Python 仍要求完整双架构运行时。17 个输入记录及证据位于 `tools/runtime-inputs`，按该目录说明验证和组装，然后运行 `runtime_bundle.py verify`。所有 Gradle 打包入口继续验证输入、生成状态与逐文件摘要，不能通过禁用门禁、复制未知运行库或借用失败输出完成构建。生成的 `app/build/cyrene-runtime` 不属于公开源码。
-
-## 签名及版本
-
-使用现有合法持有的同一私钥，在根目录创建不提交的 `keystore.properties`。不要输出密码，不要为了覆盖安装而换签名或卸载手机应用。参数名为 storeFile、storePassword、keyAlias、keyPassword。主应用与无障碍 Provider 必须同签名。
-
-本候选固定 `0.2.0` / `271`，包名 `io.zer0.muse.cyrene`。发布前必须以实际已发布的 0.1.0 为准核对包名、签名与递增关系；若其版本代码已达到 271，应提高 0.2.0 的编号后重建，不能降低已发布编号。版本配置在 `tools/release/release-profile.json`，上游构建默认值保留，不代表 Cyrene 的正式版本。
-
-本地候选沿用现有个人证书，以保持当前安装版的升级兼容；这并不替代对公开版本签名策略和私钥保管的确认。未来不得为了更换签名而自动卸载或清除数据。
+通过已验证的 Python 环境执行以下命令；`cyreneRuntimePython` 使用你自己的固定依赖环境。当前已验收 APK 含发布目标的测试所需保留规则，非 debuggable。
 
 ```powershell
-.\tools\release\prepare-local.ps1 -Python python3 -RuntimeVerifierPython "你的已验证 Python 环境" -Offline
+.\gradlew.bat :app:packageRelease :app:assembleReleaseAndroidTest :app:assembleRelease `
+  -PlanSyncTests=true -PcyreneBuild=true -PversionName=0.3.0-lan.2 -PversionCode=273 `
+  -PnoUniversal -PcyreneRuntimePython=python `
+  '-Dorg.gradle.jvmargs=-Xmx6g -Dfile.encoding=UTF-8 -XX:+UseParallelGC' `
+  -Dorg.gradle.parallel=false --max-workers=1 --no-configuration-cache --no-daemon
 ```
 
-此脚本只生成本地候选、依赖清单和选定 JUnit 测试结果，不上传、不推送、不安装，也不会创建 Release。首次建立缓存时可以不传 `-Offline`。
+已有缓存时可加 --offline。本次最终 APK 构建和 lintVital 通过，未宣称全量 Lint 或全应用验收。
 
-测试只覆盖指定的 7 个纯 JUnit/MockK 套件；测试专用 init 脚本排除未用到的 Robolectric 原生运行库，不能用于宣称 Robolectric 或真机测试通过。Release 保留 R8、资源压缩、签名门禁和 lintVital；不宣称全套 Lint 或全量测试已完成。
+## 校验与导出
 
-## 产物检查
+`python tools/release/verify_source.py` 核对本版源码基线及公开边界；`python tools/release/export_source.py --output <新的ZIP路径>` 生成对应源码与逐文件摘要。旧 0.1.9/0.2.0 基线原样保留，本版单独记录当前已验收业务源码。
 
-只将目标 ARM64 Release APK 纳入本轮候选。检查版本、包名、debuggable=false、主包/Provider 签名、16 KB ZIP 对齐、本地语音回调及内置网页/运行时资源。源码与最终 APK 分别生成 SHA-256，保存匹配的源码清单及依赖图。APK 不包含用户模型、录音或个人角色。
+`python tools/release/verify_apk.py --apk <APK路径> --sdk <SDK路径> --report <JSON路径>` 核对版本、包名、签名、资源、Provider、ZIP 对齐，并继续报告继承的 ELF 16KB 限制。手机测试类为 io.zer0.muse.sync.LanSyncDeviceTest，协议测试需要可销毁电脑服务与一次性配对 URI，不要用正式角色作测试。
 
-本机生成的候选不等于已批准分发。按 `CYRENE_RELEASE_CHECKLIST.md` 处理未关闭项目；本轮不监测或定时发布；等用户确认 0.1.0 已发布后，再继续 0.2.0 的发布流程。
+prepare-local.ps1 仍是仅本地构建工具，无推送或发布功能。历史语音单元测试与本次 LAN 真机结果分开记录。当前验收见 release/LAN_SYNC_VALIDATION.json；旧版历史见 release/PUBLICATION.md。

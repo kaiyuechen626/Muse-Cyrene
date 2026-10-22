@@ -1,7 +1,8 @@
-Muse Cyrene 0.2.0 / 271
-Release tag: cyrene-v0.2.0
-Current publication and acceptance record: release/PUBLICATION.md
-The owner requested publication after 0.1.0 was published.
-Historical local-candidate reports retain their original hold and unexecuted-test fields.
-Known third-party license questions remain unresolved; no additional legal clearance is asserted.
-Public source excludes personal data, signing material, speech models and the runtime AAR.
+Muse Cyrene 0.3.0-lan.2 / 273
+Status: prerelease; publication is managed separately from local build scripts.
+Release tag: cyrene-v0.3.0-lan.2
+This release reuses the exact same-signed APK accepted on Samsung S25.
+Current evidence: release/LAN_SYNC_VALIDATION.json and releases/0.3.0-lan.2.md.
+Historical release/PUBLICATION.md and source-baseline.json remain historical records.
+Public source excludes personal data, pairing state, signing keys, models, caches, test APKs and the speech AAR.
+Inherited license and 16KB ELF limitations remain disclosed; no new clearance is asserted.

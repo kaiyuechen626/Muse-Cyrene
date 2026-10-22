@@ -2302,9 +2302,11 @@ class ChatViewModel(
         loadArchivedSessions()
         // Phase 8.2: 观察 Assistant 列表(侧栏选择器用)
         viewModelScope.launch {
-            assistantRepository.observeAll.collect { list ->
+            val syncRedirects = runCatching { io.zer0.muse.sync.LanSyncManager.get(appContext).roleRedirects }.getOrElse { kotlinx.coroutines.flow.MutableStateFlow(emptyMap<String, String>()) }
+            kotlinx.coroutines.flow.combine(assistantRepository.observeAll, syncRedirects) { list, redirects -> list to redirects }.collect { (all, redirects) ->
+                val list = all.filter { it.id !in redirects }
                 _state.update { state ->
-                    val currentId = state.currentAssistant?.id
+                    val currentId = state.currentAssistant?.id?.let { id -> var target = id; val seen = mutableSetOf<String>(); while (redirects.containsKey(target) && seen.add(target)) target = redirects.getValue(target); target }
                     val refreshedCurrent =
                         currentId?.let { id ->
                             list.firstOrNull { assistant -> assistant.id == id }

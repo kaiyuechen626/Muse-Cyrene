@@ -333,6 +333,7 @@ class MainActivity : ComponentActivity() {
                                     onSplashReady = { splashReady = true },
                                 )
                                 MuseToastHost()
+                                io.zer0.muse.sync.LanSyncMergePrompt()
                             }
                         }
                     } // CompositionLocalProvider(液态玻璃开关)

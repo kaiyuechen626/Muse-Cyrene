@@ -147,6 +147,7 @@ tasks.named("preBuild") {
 }
 
 android {
+    if (providers.gradleProperty("lanSyncTests").isPresent) testBuildType = "release"
     cyreneRuntimeDir?.let { runtime ->
         sourceSets.getByName("main").assets.srcDir(File(runtime, "assets"))
         sourceSets.getByName("main").jniLibs.srcDir(File(runtime, "jniLibs"))
@@ -243,6 +244,10 @@ android {
 
     buildTypes {
         release {
+            if (providers.gradleProperty("lanSyncTests").isPresent) {
+                testProguardFiles("lan-sync-test-rules.pro")
+                proguardFiles("lan-sync-test-target-rules.pro")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             signingConfig = signingConfigs.getByName("release")
@@ -377,6 +382,7 @@ tasks.withType<Test>().configureEach {
 }
 
 dependencies {
+    androidTestImplementation("com.google.errorprone:error_prone_annotations:2.26.1")
     implementation(files("libs/sherpa-onnx-static-link-onnxruntime-1.13.8.aar"))
     // 项目内模块
     implementation(project(":ai"))

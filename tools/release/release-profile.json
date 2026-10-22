@@ -1,16 +1,14 @@
 {
-  "versionName": "0.2.0",
-  "versionCode": 271,
+  "versionName": "0.3.0-lan.2",
+  "versionCode": 273,
   "applicationId": "io.zer0.muse.cyrene",
   "releaseAbi": "arm64-v8a",
   "signerSha256": "f11844ed7ab467de465b38733385b632a5612859e184f6aaf9176908a9c69b5d",
-  "status": "LOCAL_CANDIDATE_ON_HOLD",
+  "status": "PRERELEASE_LOCAL_BUILD_PROFILE",
   "publishAllowed": false,
   "requiresBeforePublication": [
-    "User confirms Muse Cyrene 0.1.0 has been published",
-    "Compare package, signing certificate and versionCode with the actual published 0.1.0; rebuild if required",
-    "Resolve recorded binary redistribution license issues",
-    "Complete final candidate device acceptance and upgrade checks"
+    "Manual publication is separate from build scripts; owner authorized this prerelease",
+    "Retain disclosed inherited license, corresponding-source and ELF 16KB limitations"
   ],
   "selectedTests": [
     "*AutoReadReplyGateTest",
@@ -20,5 +18,12 @@
     "*LocalSpeechChunkerTest",
     "*SpeechPrefetchTest",
     "*SpeechSynthesisRequestsTest"
-  ]
+  ],
+  "sourceBaseline": "release/lan-sync-source-baseline.json",
+  "deviceAcceptance": {
+    "isolatedTestsPassed": 5,
+    "wifiProtocolTestsPassed": 1,
+    "device": "Samsung S25",
+    "fullAppRegression": "not executed"
+  }
 }

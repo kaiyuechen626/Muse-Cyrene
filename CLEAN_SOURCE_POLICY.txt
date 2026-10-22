@@ -1,12 +1,9 @@
-STATUS UPDATE 2026-10-21: Historical preparation record follows. See release/PUBLICATION.md for the owner-requested 0.2.0 release and inherited limitations.
-
-Muse Cyrene 0.2.0 source preparation policy — 2026-10-21
-Source exports use a manifest allowlist, never a recursive copy of the workspace.
-Exclude keystore.properties, signing keys, API credentials, chat/settings exports,
-personal recordings/voice packs/models, generated runtime binaries, build caches,
-test APKs and the speech AAR. Keep complete application source, upstream provenance,
-license texts, build scripts, fixed input evidence and required embedded web assets.
-The speech AAR is an explicit external dependency, verified by the official hash.
-The historical four unresolved fixtures remain omitted and related tests skipped.
-No current application feature is removed by this source export.
-Publication stays on hold until prerequisites in release-profile.json are fulfilled.
+Muse Cyrene current source preparation policy
+Export uses an explicit manifest allowlist; never recursively copy the workspace.
+Exclude signing material, API keys, chats, settings exports, pairing state, recordings,
+voice packs, models, generated runtime binaries, caches, APKs and the speech AAR.
+Retain complete application source, current LAN code/tests, upstream provenance,
+license texts, build tools, fixed input evidence and required embedded web assets.
+The speech AAR remains a fixed external dependency verified by its official hash.
+Historical unresolved fixtures remain omitted; no application feature is removed.
+Current release profile prepares local artifacts only and performs no upload.

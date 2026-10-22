@@ -660,6 +660,7 @@ fun SettingsMcpPage(onBack: () -> Unit) {
  */
 @Composable
 fun SettingsDataPage(onBack: () -> Unit, onOpenCloudBackup: () -> Unit = {}) {
+    val lanSyncContext = androidx.compose.ui.platform.LocalContext.current
     val settings: SettingsRepository = koinInject()
     val sessionRepository: io.zer0.muse.data.session.SessionRepository = koinInject()
     val backupService: io.zer0.muse.backup.BackupService = koinInject()
@@ -667,6 +668,11 @@ fun SettingsDataPage(onBack: () -> Unit, onOpenCloudBackup: () -> Unit = {}) {
     val messageCount by sessionRepository.observeMessageCount().collectAsStateWithLifecycle(initialValue = 0)
 
     SettingsSubPageScaffold(title = stringResource(R.string.settings_sub_data_backup), onBack = onBack) {
+        item {
+            androidx.compose.material3.OutlinedButton(onClick = { lanSyncContext.startActivity(android.content.Intent(lanSyncContext, io.zer0.muse.sync.LanSyncActivity::class.java)) }, modifier = Modifier.fillMaxWidth()) {
+                Text("手机与电脑局域网同步（扫码 / USB 配对）")
+            }
+        }
         item {
             BackupSection(
                 sessionCount = sessionCount,

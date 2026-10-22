@@ -27,6 +27,8 @@ data class MessageSearchJoin(
  */
 @Dao
 interface MessageDao {
+    @Query("SELECT * FROM messages WHERE sessionId = :sessionId ORDER BY CASE WHEN commitSeq > 0 THEN commitSeq ELSE seq END, createdAt, id")
+    suspend fun lanSyncBySession(sessionId: String): List<MessageEntity>
 
     /** 观察指定会话的全部消息(按 seq 单调序列升序)。备份导出用,需全量加载。 */
     @Query(

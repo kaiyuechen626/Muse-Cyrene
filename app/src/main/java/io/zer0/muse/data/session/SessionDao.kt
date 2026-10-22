@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.Flow
  */
 @Dao
 interface SessionDao {
+    @Query("SELECT * FROM sessions ORDER BY createdAt, id")
+    suspend fun lanSyncAll(): List<SessionEntity>
 
     /** 观察全部会话(置顶优先,再按 updatedAt 降序)。含已归档和已软删除会话,仅供备份导出使用。主列表用 [observeActive]。 */
     @Query("SELECT * FROM sessions ORDER BY pinned DESC, sortOrder ASC, updatedAt DESC")

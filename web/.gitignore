@@ -6,3 +6,7 @@ coverage/
 .env.*
 !.env.example
 *.log
+
+# The accepted source package retains this required embedded web build.
+!apps/client/dist/
+!apps/client/dist/**

@@ -225,6 +225,8 @@ class MuseApp : Application(), ImageLoaderFactory {
             MuseCrashHandler.markSafeMode(this)
             return
         }
+        runCatching { io.zer0.muse.sync.LanSyncManager.get(this).start() }
+            .onFailure { Logger.w("LanSync", "局域网同步未启动，原有聊天不受影响") }
         val incompleteRestore = restoreJournal.incompleteEntry()
         val initializeRuntime: MuseApp.() -> Unit = {
             // 强制实例化全部工具注册器，让 100+ 工具在启动后即可用

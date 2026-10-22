@@ -8,7 +8,11 @@ VOICE_SHA = 'b22c3fc1b6a45666d28892bb2f7694beeb77a8362d7ebd77c1a5431ec9435471'
 
 
 def baseline():
-    return json.loads((ROOT / 'release/source-baseline.json').read_text(encoding='utf-8'))['fileHashes']
+    profile = json.loads((ROOT / 'tools/release/release-profile.json').read_text(encoding='utf-8'))
+    selected = profile.get('sourceBaseline', 'release/source-baseline.json')
+    if Path(selected).is_absolute() or '..' in Path(selected).parts:
+        raise ValueError('Unsafe baseline path')
+    return json.loads((ROOT / selected).read_text(encoding='utf-8'))['fileHashes']
 
 
 def source_files():

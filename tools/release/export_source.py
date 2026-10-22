@@ -17,11 +17,13 @@ def main():
         raise SystemExit('Output already exists; choose a new path')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     hashes = {}
+    profile = json.loads((ROOT / 'tools/release/release-profile.json').read_text(encoding='utf-8'))
+    prefix = 'Muse-Cyrene-' + profile['versionName'] + '/'
     with zipfile.ZipFile(args.output, 'x', zipfile.ZIP_DEFLATED) as archive:
         for name in source_files():
             data = (ROOT / name).read_bytes()
             hashes[name] = hashlib.sha256(data).hexdigest()
-            info = zipfile.ZipInfo('Muse-Cyrene-0.2.0/' + name)
+            info = zipfile.ZipInfo(prefix + name)
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = (0o100755 if name == 'gradlew' or name.endswith('.sh') else 0o100644) << 16
             archive.writestr(info, data)
@@ -30,7 +32,7 @@ def main():
         if archive.testzip() is not None:
             raise ValueError('Invalid ZIP')
         for name, digest in hashes.items():
-            if hashlib.sha256(archive.read('Muse-Cyrene-0.2.0/' + name)).hexdigest() != digest:
+            if hashlib.sha256(archive.read(prefix + name)).hexdigest() != digest:
                 raise ValueError('Source ZIP checksum mismatch: ' + name)
     print(json.dumps({'file': args.output.name, 'files': len(hashes),
                       'bytes': args.output.stat().st_size,
