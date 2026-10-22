@@ -1,9 +1,9 @@
-# Muse Cyrene 0.3.0-lan.2
+# Muse Cyrene 0.3.0-chatrooms.1
 
-Unofficial Android derivative of [Muse v2.6.1](https://github.com/Zer0Qing/Muse/tree/v2.6.1), maintained by kaiyuechen626. Credit Mozi and upstream contributors. GPL-3.0-or-later; retain LICENSE and NOTICE.
+Unofficial Android fork of [Muse v2.6.1](https://github.com/Zer0Qing/Muse/tree/v2.6.1). Thanks to Mozi and upstream contributors. GPL-3.0-or-later; retain LICENSE, NOTICE and provenance records.
 
-This prerelease pairs with Muse Multi-Agent 0.3.0-lan.2: QR or USB for first pairing, then encrypted LAN synchronization of characters, text chats and facts. Distinct characters with the same name require a merge/keep-separate choice. Credentials, DSH permissions and local voice models stay on their devices.
+ARM64 prerelease, application ID `io.zer0.muse.cyrene`, version code 275. Includes independent group chats and public-text LAN synchronization with Muse Multi-Agent 0.3.0-chatrooms.1. Private group messages, attachments and phone-only group context remain on the phone. See docs/CHAT_ROOMS.md.
 
-ARM64 APK: version code 273, same signing certificate as the previous build. Five isolated device checks and one direct Wi-Fi protocol check passed on Samsung S25; this is not full-app or all-device acceptance. Release notes and validation are provided with this version.
+Install the ARM64 APK from Releases; back up first. In-place upgrades require the same signing key. Source ZIPs are not installers. Configure your own services and API credentials. No private accounts, voice models or recordings are distributed.
 
-See [Chinese README](README.md), [build instructions](BUILDING_CYRENE.md), [LAN scope](docs/LAN_SYNC.md), [release notes](releases/0.3.0-lan.2.md), and [existing license review](CYRENE_LICENSE_REVIEW.md). Historical license questions and the image-processing library's 16KB ELF limitation remain disclosed. Personal data, keys, recordings, models, generated runtimes and the speech AAR are excluded from public source.
+See BUILDING_CYRENE.md, docs/PUBLISHING.md and release/CURRENT_VALIDATION.json. Existing third-party licensing/corresponding-source questions and native ELF 16KB limitations remain disclosed in CYRENE_LICENSE_REVIEW.md. Publication is managed separately from the local build scripts.

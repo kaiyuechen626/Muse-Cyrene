@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="groupchat_room_guidance">选择 2–8 个角色进入同一聊天室，各自保留人格与记忆。聊天室独立于单独聊天；配对电脑后可同步公开消息。</string>
+    <string name="groupchat_room_member_required">请选择 2–8 个角色</string>
+</resources>

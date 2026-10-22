@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="groupchat_room_guidance">Elige entre 2 y 8 personajes, cada uno con su personalidad y memoria. Las salas están separadas de los chats individuales. Vincula tu ordenador para sincronizar los mensajes públicos.</string>
+    <string name="groupchat_room_member_required">Elige entre 2 y 8 personajes</string>
+</resources>

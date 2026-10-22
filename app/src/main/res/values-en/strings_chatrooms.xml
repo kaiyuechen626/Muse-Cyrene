@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="groupchat_room_guidance">Choose 2–8 characters, each with their own personality and memory. Rooms stay separate from individual chats. Pair your computer to sync public messages.</string>
+    <string name="groupchat_room_member_required">Choose 2–8 characters</string>
+</resources>

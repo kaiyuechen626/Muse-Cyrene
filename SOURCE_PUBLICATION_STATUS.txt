@@ -1,8 +1,3 @@
-Muse Cyrene 0.3.0-lan.2 / 273
+Version: 0.3.0-chatrooms.1 (275)
 Status: prerelease; publication is managed separately from local build scripts.
-Release tag: cyrene-v0.3.0-lan.2
-This release reuses the exact same-signed APK accepted on Samsung S25.
-Current evidence: release/LAN_SYNC_VALIDATION.json and releases/0.3.0-lan.2.md.
-Historical release/PUBLICATION.md and source-baseline.json remain historical records.
-Public source excludes personal data, pairing state, signing keys, models, caches, test APKs and the speech AAR.
-Inherited license and 16KB ELF limitations remain disclosed; no new clearance is asserted.
+See README.md, docs/PUBLISHING.md and release/CURRENT_VALIDATION.json.

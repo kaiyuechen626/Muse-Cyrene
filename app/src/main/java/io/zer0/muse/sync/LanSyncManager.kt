@@ -66,7 +66,10 @@ class LanSyncManager private constructor(private val context: Context) {
     private var started = false
     private val cm get() = context.getSystemService(ConnectivityManager::class.java)
     private fun wifi(): Network? = cm.allNetworks.firstOrNull { n -> cm.getNetworkCapabilities(n)?.let { it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || it.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) } == true }
-    private fun busy(): Boolean = runCatching { GlobalContext.get().get<ChatGenerationManager>().activeGenerations.value.isNotEmpty() }.getOrDefault(false)
+    private fun busy(): Boolean = runCatching {
+        GlobalContext.get().get<ChatGenerationManager>().activeGenerations.value.isNotEmpty() ||
+            GlobalContext.get().get<io.zer0.muse.schedule.GroupChatScheduler>().activeGroupGeneration.value != null
+    }.getOrDefault(false)
     private fun load(): JSONObject {
         if (!file.baseFile.exists()) return JSONObject().put("deviceId", UUID.randomUUID().toString()).put("cursor", 0).put("rows", JSONObject())
         val bytes = file.openRead().use { it.readBytes() }; require(bytes.size > 28)
@@ -152,6 +155,8 @@ class LanSyncManager private constructor(private val context: Context) {
             var batchBytes = 0
             val allKeys = (local.keys + rows.keys().asSequence().toList()).distinct().sortedWith(compareBy<String> { if (it.startsWith("characters:")) 0 else if (it.startsWith("chats:")) 1 else 2 }.thenBy { it })
             for (key in allKeys) {
+                val isGroup = (local[key] as? JSONObject)?.optString("kind") == "group" || rows.optJSONObject(key)?.optBoolean("groupChat") == true || rows.optJSONObject(key)?.optJSONObject("body")?.optString("kind") == "group"
+                if (isGroup && peer.optInt("groupChatVersion") != 1) continue
                 val aliases = state.optJSONObject("roleAliases")
                 if ((key.startsWith("characters:") || key.startsWith("memories:")) && aliases?.has(key.substringAfter(':')) == true) continue
                 val value = local[key] ?: JSONObject.NULL; val old = rows.optJSONObject(key); if (old != null && LanSyncCrypto.hash(value) == LanSyncCrypto.hash(old.opt("body"))) continue
@@ -170,7 +175,8 @@ class LanSyncManager private constructor(private val context: Context) {
             val rid = UUID.randomUUID().toString(); val did = state.getString("deviceId"); val key = peer.getString("key")
             val inventory = JSONArray(); for ((rk, value) in local) if (rk.startsWith("characters:") && value is JSONObject && !value.has("deletedAt")) inventory.put(JSONObject().put("id", value.getString("id")).put("name", value.getString("name")))
             val answers = state.optJSONObject("nameAnswers") ?: JSONObject(); val decisions = JSONArray(); answers.keys().forEach { id -> decisions.put(JSONObject().put("id", id).put("merge", answers.getBoolean(id))) }
-            val payload = JSONObject().put("cursor", state.optLong("cursor")).put("changes", changes).put("roleInventory", inventory).put("roleMergeVersion", state.optLong("roleMergeVersion")).put("nameDecisions", decisions).put("identityMergeVersion", state.optLong("identityMergeVersion")).put("completeIdentityMerge", state.optLong("identityMergeVersion") > 0 && changes.length() == 0)
+            val payload = JSONObject().put("groupChatVersion", 1).put("cursor", state.optLong("cursor")).put("changes", changes).put("roleInventory", inventory).put("roleMergeVersion", state.optLong("roleMergeVersion")).put("nameDecisions", decisions).put("identityMergeVersion", state.optLong("identityMergeVersion")).put("completeIdentityMerge", state.optLong("identityMergeVersion") > 0 && changes.length() == 0)
+            payload.put("groupMemberships", adapter.groupMemberships())
             val request = JSONObject().put("deviceId", did).put("requestId", rid).put("payload", LanSyncCrypto.seal(key, "sync:request:$did:$rid", payload))
             val oldHost = peer.optString("host"); val oldPort = peer.optInt("port")
             val response = try { post(peer.getString("host"), peer.getInt("port"), "/exchange", request, network) } catch (_: Exception) { peer.put("host", discover(peer, network)); post(peer.getString("host"), peer.getInt("port"), "/exchange", request, network) }
@@ -178,6 +184,8 @@ class LanSyncManager private constructor(private val context: Context) {
             val output = LanSyncCrypto.open(key, "sync:response:$did:$rid", response.getJSONObject("payload"))
             if (output.optBoolean("busy")) { status.value = "电脑正在处理聊天，稍后自动同步。"; return@withContext }
             require(output.optString("serverId") == peer.getString("serverId"))
+            val groupCapabilityChanged = output.optInt("groupChatVersion") == 1 && peer.optInt("groupChatVersion") != 1
+            if (groupCapabilityChanged) peer.put("groupChatVersion", 1)
             output.optJSONArray("acceptedNameDecisions")?.let { a -> for (i in 0 until a.length()) answers.remove(a.getString(i)) }
             val matchesChanged = output.has("nameMatches") && output.getJSONArray("nameMatches").toString() != state.optJSONArray("nameMatches")?.toString()
             if (output.has("nameMatches")) { state.put("nameMatches", output.getJSONArray("nameMatches")); nameMatches.value = readMatches() }
@@ -189,8 +197,12 @@ class LanSyncManager private constructor(private val context: Context) {
             }
             if (nameMatches.value.isNotEmpty()) { save(); status.value = "发现同名 AI，请选择合并或分别保留。"; return@withContext }
             if (output.getJSONArray("rows").length() == 0 && output.getJSONArray("acks").length() == 0) {
-                if (matchesChanged || oldHost != peer.optString("host") || oldPort != peer.optInt("port") || decisions.length() > 0 || output.optBoolean("completedIdentityMerge")) save()
-                status.value = "已连接电脑，没有待同步的修改。"; return@withContext
+                val cursorChanged = state.optLong("cursor") != output.getLong("cursor")
+                state.put("cursor", output.getLong("cursor"))
+                if (matchesChanged || groupCapabilityChanged || cursorChanged || oldHost != peer.optString("host") || oldPort != peer.optInt("port") || decisions.length() > 0 || output.optBoolean("completedIdentityMerge")) save()
+                status.value = "已连接电脑，没有待同步的修改。" + groupSyncNote(adapter, peer)
+                if (groupCapabilityChanged || output.optBoolean("hasMore")) scope.launch { delay(200); syncNow() }
+                return@withContext
             }
             if (busy() || before != LanSyncCrypto.hash(JSONObject(adapter.export()))) { status.value = "本地数据发生变化，下一轮自动合并。"; return@withContext }
             val incoming = mutableMapOf<String, JSONObject>()
@@ -210,10 +222,15 @@ class LanSyncManager private constructor(private val context: Context) {
                 applied.add(rk)
             }
             state.put("cursor", output.getLong("cursor")).put("lastSync", System.currentTimeMillis()); adapter.rememberNative(applied); save()
-            status.value = "已自动同步 · ${java.text.DateFormat.getTimeInstance().format(java.util.Date())}" + if (conflictArray.length() > 0) " · ${conflictArray.length()} 处冲突副本已保留" else ""
-            if (output.optBoolean("hasMore") || changes.length() >= 16) scope.launch { delay(200); syncNow() }
+            status.value = "已自动同步 · ${java.text.DateFormat.getTimeInstance().format(java.util.Date())}" + (if (conflictArray.length() > 0) " · ${conflictArray.length()} 处冲突副本已保留" else "") + groupSyncNote(adapter, peer)
+            if (groupCapabilityChanged || output.optBoolean("hasMore") || changes.length() >= 16) scope.launch { delay(200); syncNow() }
         } catch (_: Exception) { status.value = "暂未同步成功，保留本地数据并自动重试。请确认同一 Wi-Fi、电脑服务及防火墙；必要时重新配对。" }
         finally { mutex.unlock() }
+    }
+    private fun groupSyncNote(adapter: LanSyncData, peer: JSONObject): String = when {
+        peer.optInt("groupChatVersion") != 1 -> " · 更新电脑端后可同步聊天室"
+        adapter.skippedGroupRooms > 0 -> " · ${adapter.skippedGroupRooms} 个旧群聊仅保留在手机（需 2–8 位角色，且历史发言者仍在成员中）"
+        else -> " · 聊天室公开消息已纳入同步"
     }
     companion object {
         @Volatile private var instance: LanSyncManager? = null

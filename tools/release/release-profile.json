@@ -1,13 +1,13 @@
 {
-  "versionName": "0.3.0-lan.2",
-  "versionCode": 273,
+  "versionName": "0.3.0-chatrooms.1",
+  "versionCode": 275,
   "applicationId": "io.zer0.muse.cyrene",
   "releaseAbi": "arm64-v8a",
   "signerSha256": "f11844ed7ab467de465b38733385b632a5612859e184f6aaf9176908a9c69b5d",
-  "status": "PRERELEASE_LOCAL_BUILD_PROFILE",
+  "status": "LOCAL_GITHUB_PRERELEASE_PREPARATION",
   "publishAllowed": false,
   "requiresBeforePublication": [
-    "Manual publication is separate from build scripts; owner authorized this prerelease",
+    "Publication is a separate manual operation; no upload performed by these scripts",
     "Retain disclosed inherited license, corresponding-source and ELF 16KB limitations"
   ],
   "selectedTests": [
@@ -19,11 +19,9 @@
     "*SpeechPrefetchTest",
     "*SpeechSynthesisRequestsTest"
   ],
-  "sourceBaseline": "release/lan-sync-source-baseline.json",
+  "sourceBaseline": "release/current-source-baseline.json",
   "deviceAcceptance": {
-    "isolatedTestsPassed": 5,
-    "wifiProtocolTestsPassed": 1,
-    "device": "Samsung S25",
+    "currentBuild": "See release/CURRENT_VALIDATION.json",
     "fullAppRegression": "not executed"
   }
 }

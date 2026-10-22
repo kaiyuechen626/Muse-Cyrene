@@ -21,6 +21,6 @@
   },
   "browserValidation": "同名提示、设定预览、网络失败重试、合并与分别保留均通过，无页面错误",
   "installedApkMatches": true,
-  "publication": "prerelease; validation performed locally",
+  "publication": "prepared locally; not uploaded",
   "scope": "isolated LAN acceptance only; historical voice/all-app checks not rerun"
 }

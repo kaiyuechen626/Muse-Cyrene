@@ -236,3 +236,9 @@
 # JNI resolves the concrete callback's boxed invoke([F)Ljava/lang/Integer;.
 # Keep its shape as well as its name; interface-only reachability is insufficient.
 -keep class io.cyrene.voice.core.NativeSpeechCallback { *; }
+
+# Samsung Android 16 / Cyrene 0.3.0-lan.2: R8's optimized MessageBubble
+# fails ART verification (Conflict register at if-eqz/if-nez, offset 0x292a).
+# Retain this large Compose facade without optimization; other UI code keeps
+# normal shrinking and optimization. Keep the name for release-device regression.
+-keep class io.zer0.muse.ui.MessageBubbleKt { *; }

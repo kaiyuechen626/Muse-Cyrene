@@ -15,7 +15,7 @@
 2. 若无，创建新 Issue 并附上：
    - 设备型号与 Android 版本
    - 复现步骤（期望行为 vs 实际行为）
-   - 日志截图或 adb logcat 输出
+   - 清理个人信息后的错误信息（不要公开原始聊天、账号或凭据）
 
 ### 提交功能建议
 1. 先搜索 Discussions 确认无人提过
@@ -34,7 +34,7 @@
 ### 本地开发环境
 - Android Studio Ladybug (2024.2+) 或更高
 - JDK 21
-- Android SDK 35
+- Android SDK 36
 - Gradle 9.4.1 (wrapper 已包含)
 
 ### 测试
@@ -46,7 +46,7 @@
 
 ## 代码规范
 
-- 遵循仓库根目录的 AGENTS.md(工程纪律与协作约定以该文件为准)
+- 遵循现有工程约定与本目录 BUILDING_CYRENE.md 的构建要求
 - 提交信息使用中文或英文，保持清晰
 
 ## 文档

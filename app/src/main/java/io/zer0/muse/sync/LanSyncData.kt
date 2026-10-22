@@ -28,6 +28,14 @@ class LanSyncData(private val context: Context, private val state: JSONObject,
     private val nativeHashes = state.optJSONObject("nativeHashes") ?: JSONObject().also { state.put("nativeHashes", it) }
     private val rows = state.optJSONObject("rows") ?: JSONObject().also { state.put("rows", it) }
     private val retired = state.optJSONObject("mergedNativeRoles") ?: JSONObject().also { state.put("mergedNativeRoles", it) }
+    private val groups = LanSyncGroups(db, ::uuid, ::native, ::base)
+    val skippedGroupRooms: Int get() = groups.skippedRooms
+    suspend fun groupMemberships(): JSONArray = JSONArray().also { out ->
+        for (room in db.groupChatDao().getAll()) {
+            val members = JSONArray(room.memberIdsJson)
+            out.put(JSONArray().also { ids -> for (i in 0 until members.length()) ids.put(uuid("characters", members.getString(i))) })
+        }
+    }
     private fun factId(role: String, fact: FactEntity): String {
         val origin = fact.source.removePrefix("lan-sync:").takeIf { fact.source.startsWith("lan-sync:") && it.matches(Regex("[a-f0-9-]{36}|[a-f0-9]{64}")) }
         return origin?.also { mappings.put("fact:$role:${fact.id}", it) } ?: uuid("fact:$role", fact.id.toString())
@@ -42,6 +50,7 @@ class LanSyncData(private val context: Context, private val state: JSONObject,
         if (targetId == null || targetId == sourceId) {
             mappings.put("characters:$sourceId", to)
         } else {
+            groups.validateMerge(sourceId, targetId)
             val sourceFacts = facts.getFactDb(sourceId).factDao().getAll()
             val targetDao = facts.getFactDb(targetId).factDao()
             val targetFacts = targetDao.getAll().associateBy { factId(targetId, it) }.toMutableMap()
@@ -63,6 +72,7 @@ class LanSyncData(private val context: Context, private val state: JSONObject,
             }
             facts.getFactStore(targetId).rebuildFtsIndex()
             db.withTransaction {
+                groups.mergeRoles(sourceId, targetId)
                 for (session in db.sessionDao().lanSyncAll()) if (session.assistantId == sourceId) db.sessionDao().update(session.copy(assistantId = targetId))
                 val source = db.assistantDao().getById(sourceId)!!; val target = db.assistantDao().getById(targetId)!!
                 db.assistantDao().upsert(target.copy(enabled = target.enabled || source.enabled))
@@ -152,6 +162,7 @@ class LanSyncData(private val context: Context, private val state: JSONObject,
             if (s.parentSessionId != null) body.put("parentChatId", uuid("chats", s.parentSessionId))
             result[key] = body
         }
+        result.putAll(groups.export(assistants))
         return result
     }
     suspend fun export(): Map<String, Any> = exportRaw().mapValues { (key, raw) ->
@@ -160,6 +171,10 @@ class LanSyncData(private val context: Context, private val state: JSONObject,
     suspend fun rememberNative(keys: Set<String>? = null) { exportRaw().forEach { (key, body) -> if (keys == null || key in keys) nativeHashes.put(key, LanSyncCrypto.hash(body)) } }
 
     suspend fun apply(kind: String, id: String, body: JSONObject?) {
+        if (kind == "chats" && (body?.optString("kind") == "group" || base("chats:$id").optString("kind") == "group" ||
+            mappings.keys().asSequence().any { it.startsWith("groupChats:") && mappings.optString(it) == id })) {
+            groups.apply(id, body); return
+        }
         when (kind) {
             "characters" -> db.withTransaction {
                 val localId = native(kind, id); val previous = db.assistantDao().getById(localId)

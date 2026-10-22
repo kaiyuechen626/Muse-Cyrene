@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-23",
+  "versionName": "0.3.0-chatrooms.1",
+  "versionCode": 275,
+  "currentRun": {
+    "build": "assembleRelease + testReleaseUnitTest: BUILD SUCCESSFUL",
+    "source": "Current working source copied without production/build-source edits",
+    "artifact": {
+      "applicationId": "io.zer0.muse.cyrene",
+      "versionCode": 275,
+      "versionName": "0.3.0-chatrooms.1",
+      "apkSha256": "344c6ed76ff52952acc4cc180ad8bf9ec11a0e8778e5280ac687938539401ad6",
+      "signerSha256": "f11844ed7ab467de465b38733385b632a5612859e184f6aaf9176908a9c69b5d",
+      "debuggable": false,
+      "zipIntegrity": "PASS",
+      "alignment16k": "PASS",
+      "abi": "arm64-v8a",
+      "unitTests": [
+        {
+          "name": "sync.LanSyncGroupsTest",
+          "passed": 7
+        },
+        {
+          "name": "schedule.GroupChatSchedulerPureLogicTest",
+          "passed": 4
+        },
+        {
+          "name": "data.groupchat.GroupChatMemoryRepositoryTest",
+          "passed": 5
+        }
+      ]
+    },
+    "deviceRetest": false,
+    "fullAppRegression": false
+  },
+  "historicalDeviceEvidence": {
+    "date": "2026-10-23",
+    "versionName": "0.3.0-chatrooms.1",
+    "scope": "Earlier build: Samsung Android 16 in-place installation, group tab/dialog and renderer checks; no new device test in this preparation",
+    "apkSha256": "09b22f0ec25bde202d152d9a74e18548c62bcfa788ee3f226fc9cd6e4e555291"
+  },
+  "knownLimitations": [
+    "Inherited licensing and runtime corresponding-source review remains unresolved; see CYRENE_LICENSE_REVIEW.md",
+    "16KB ZIP alignment does not establish 16KB ELF compatibility",
+    "No all-device, full-app, Bluetooth or call regression claimed"
+  ],
+  "publication": "local prerelease preparation only; not uploaded"
+}

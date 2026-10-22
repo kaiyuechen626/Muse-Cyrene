@@ -1,0 +1,33 @@
+{
+  "file": "app-arm64-v8a-release.apk",
+  "sha256": "344c6ed76ff52952acc4cc180ad8bf9ec11a0e8778e5280ac687938539401ad6",
+  "versionName": "0.3.0-chatrooms.1",
+  "versionCode": 275,
+  "applicationId": "io.zer0.muse.cyrene",
+  "abi": "arm64-v8a",
+  "debuggable": false,
+  "signerSha256": "f11844ed7ab467de465b38733385b632a5612859e184f6aaf9176908a9c69b5d",
+  "signatureVerified": true,
+  "zipAlignment16KB": "passed",
+  "elf16KBUnsupportedOrUnverifiedLibraries": [
+    "lib/arm64-v8a/libimage_processing_util_jni.so"
+  ],
+  "sameSignedCyreneAccessibilityProvider": true,
+  "packagedResourcesVerified": {
+    "assetHashes": 7,
+    "otherBaselineAssetHashes": 222,
+    "runtimeAssetHashes": 2
+  },
+  "baselineNativeLibrariesPresent": 83,
+  "updatedLicenseManifestCheckedAgainstCurrentSource": true,
+  "unchangedOtherBaselineAssetsVerified": 221,
+  "regeneratedProfilesPresent": 2,
+  "speechLicenseTextsVerified": true,
+  "noPersonalVoicePackBundled": true,
+  "deviceTestsThisVersion": {
+    "currentBuild": "See release/CURRENT_VALIDATION.json",
+    "fullAppRegression": "not executed"
+  },
+  "binaryRedistributionApproved": false,
+  "publishAllowed": false
+}

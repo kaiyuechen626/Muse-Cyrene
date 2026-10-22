@@ -23,6 +23,9 @@ data class GroupChatMessageCount(
 @Dao
 interface GroupChatMessageDao {
 
+    @Query("SELECT * FROM group_chat_messages WHERE chatId = :chatId ORDER BY timestamp ASC, id ASC")
+    suspend fun lanSyncByChat(chatId: String): List<GroupChatMessageEntity>
+
     /**
      * 观察指定群聊的消息(按 timestamp 升序,聊天界面用)。
      * M4: 暂用 LIMIT 200 上限,后续可改 PagingSource。

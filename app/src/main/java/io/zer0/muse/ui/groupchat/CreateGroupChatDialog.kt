@@ -69,12 +69,14 @@ fun CreateGroupChatDialog(
 
     val maxNameLength = 30
     val nameError = showErrors && name.isBlank()
-    val memberError = showErrors && selectedMemberIds.isEmpty()
+    val memberError = showErrors && selectedMemberIds.size !in 2..8
 
     MuseDialog(
         onDismissRequest = onDismiss,
         title = stringResource(R.string.groupchat_create_title),
         content = {
+            Text(stringResource(R.string.groupchat_room_guidance), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(12.dp))
             // 群聊名输入框
             MuseTextField(
                 value = name,
@@ -156,11 +158,13 @@ fun CreateGroupChatDialog(
                                 showErrors = false
                                 selectedMemberIds = if (selected) {
                                     selectedMemberIds - assistant.id
-                                } else {
+                                } else if (selectedMemberIds.size < 8) {
                                     selectedMemberIds + assistant.id
+                                } else {
+                                    selectedMemberIds
                                 }
                             },
-                            label = assistant.name,
+                            label = if (assistants.count { it.name == assistant.name } > 1) "${assistant.name} · ${assistant.id.take(4)}" else assistant.name,
                         )
                     }
                 }
@@ -168,7 +172,7 @@ fun CreateGroupChatDialog(
             if (memberError) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = stringResource(R.string.groupchat_member_required),
+                    text = stringResource(R.string.groupchat_room_member_required),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.fillMaxWidth(),
@@ -220,7 +224,7 @@ fun CreateGroupChatDialog(
         confirmText = stringResource(R.string.groupchat_create_btn),
         onConfirm = {
             val trimmedName = name.trim()
-            if (trimmedName.isNotBlank() && selectedMemberIds.isNotEmpty()) {
+            if (trimmedName.isNotBlank() && selectedMemberIds.size in 2..8) {
                 onConfirm(trimmedName, selectedMemberIds.toList(), selectedTeamId, templateMode, templateLength)
             } else {
                 showErrors = true

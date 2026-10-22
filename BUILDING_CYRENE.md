@@ -1,6 +1,6 @@
-# Muse Cyrene 0.3.0-lan.2 构建说明
+# Muse Cyrene 0.3.0-chatrooms.1 构建说明
 
-本版包名 `io.zer0.muse.cyrene`，版本代码 273，发行目标 ARM64。构建脚本仅生成本地产物，不自动推送或创建 Release。
+本版包名 `io.zer0.muse.cyrene`，版本代码 275，发行目标 ARM64。构建脚本只生成本地产物，GitHub 发布单独管理。
 
 ## 环境与依赖
 
@@ -18,7 +18,7 @@ JDK 21、Android SDK / Build Tools 36、NDK 27.0.12077973、CMake 3.22.1、项�
 
 ```powershell
 .\gradlew.bat :app:packageRelease :app:assembleReleaseAndroidTest :app:assembleRelease `
-  -PlanSyncTests=true -PcyreneBuild=true -PversionName=0.3.0-lan.2 -PversionCode=273 `
+  -PlanSyncTests=true -PcyreneBuild=true -PversionName=0.3.0-chatrooms.1 -PversionCode=275 `
   -PnoUniversal -PcyreneRuntimePython=python `
   '-Dorg.gradle.jvmargs=-Xmx6g -Dfile.encoding=UTF-8 -XX:+UseParallelGC' `
   -Dorg.gradle.parallel=false --max-workers=1 --no-configuration-cache --no-daemon
@@ -28,8 +28,8 @@ JDK 21、Android SDK / Build Tools 36、NDK 27.0.12077973、CMake 3.22.1、项�
 
 ## 校验与导出
 
-`python tools/release/verify_source.py` 核对本版源码基线及公开边界；`python tools/release/export_source.py --output <新的ZIP路径>` 生成对应源码与逐文件摘要。旧 0.1.9/0.2.0 基线原样保留，本版单独记录当前已验收业务源码。
+`python tools/release/verify_source.py` 核对本版源码基线及公开边界；`python tools/release/export_source.py --output <新的ZIP路径>` 生成对应源码与逐文件摘要。历史基线原样保留，本版 release/current-source-baseline.json 记录此次导出的源码摘要；摘要用于防止遗漏或意外修改，不等于全应用验收。
 
 `python tools/release/verify_apk.py --apk <APK路径> --sdk <SDK路径> --report <JSON路径>` 核对版本、包名、签名、资源、Provider、ZIP 对齐，并继续报告继承的 ELF 16KB 限制。手机测试类为 io.zer0.muse.sync.LanSyncDeviceTest，协议测试需要可销毁电脑服务与一次性配对 URI，不要用正式角色作测试。
 
-prepare-local.ps1 仍是仅本地构建工具，无推送或发布功能。历史语音单元测试与本次 LAN 真机结果分开记录。当前验收见 release/LAN_SYNC_VALIDATION.json；旧版历史见 release/PUBLICATION.md。
+prepare-local.ps1 仍是仅本地构建工具，无推送或发布功能。历史语音单元测试与本次 LAN 真机结果分开记录。当前验收见 release/CURRENT_VALIDATION.json；旧版历史见 release/PUBLICATION.md。

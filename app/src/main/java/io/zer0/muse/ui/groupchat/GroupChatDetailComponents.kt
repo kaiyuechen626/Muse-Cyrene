@@ -168,6 +168,7 @@ internal fun GroupChatMessageBubble(
     bubbleSkin: io.zer0.muse.ui.theme.BubbleSkin? = null,
 ) {
     val isUser = message.senderType == "user"
+    val speakerLabel = if (assistants.count { it.name == message.senderName } > 1) "${message.senderName} · ${message.senderId.take(4)}" else message.senderName
     // Resolve once per role/theme so user and agent bubbles share the same resolver
     // and fallback path as the single-chat renderer.
     val resolvedSkin = bubbleSkin?.let { skin ->
@@ -374,9 +375,9 @@ internal fun GroupChatMessageBubble(
                 Text(
                     // CHAT-04: 群聊 Agent 消息补时间戳(与单聊一致)
                     text = if (chatPrefs.showTimestamp) {
-                        "${message.senderName} · ${formatMessageTime(message.timestamp, use24Hour = chatPrefs.use24Hour)}"
+                        "$speakerLabel · ${formatMessageTime(message.timestamp, use24Hour = chatPrefs.use24Hour)}"
                     } else {
-                        message.senderName
+                        speakerLabel
                     },
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

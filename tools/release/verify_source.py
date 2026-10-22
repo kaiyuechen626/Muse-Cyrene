@@ -37,7 +37,7 @@ def main():
                 raise ValueError(label + ' detected in ' + name)
     profile = json.loads((ROOT / 'tools/release/release-profile.json').read_text(encoding='utf-8'))
     if profile['publishAllowed'] is not False:
-        raise ValueError('Publication hold was removed')
+        raise ValueError('Local preparation must not enable automatic publication')
     print(json.dumps({'publicSourceFiles': len(names), 'productionAndBuildFilesPreserved': preserved,
                       'modifiedBaselineFiles': changes, 'voiceAarExcludedFromSource': True,
                       'credentialPatternScan': 'passed', 'publishAllowed': False}, indent=2))

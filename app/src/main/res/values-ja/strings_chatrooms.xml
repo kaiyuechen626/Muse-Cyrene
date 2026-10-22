@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="groupchat_room_guidance">それぞれの人格と記憶を持つキャラクターを2〜8人選びます。チャットルームは個別チャットとは別に表示されます。パソコンとペアリングすると公開メッセージを同期できます。</string>
+    <string name="groupchat_room_member_required">キャラクターを2〜8人選んでください</string>
+</resources>

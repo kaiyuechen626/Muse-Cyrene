@@ -109,6 +109,8 @@ internal class ChatGenerationController(
 
     /** B-1: 删除会话消息时停止其全部在途生成(应用级 + 会话级取消)。 */
     fun stopGenerationForSession(sessionId: String?) {
+        // A missing page/session must never become the manager's stop-all command.
+        if (sessionId == null) return
         sessionId?.let { executionRegistry?.requestCancelForSession(it, "delete_message") }
         chatGenerationManager.stop(sessionId)
         sessionId?.let { sessionManager.cancelGeneration(it) }
@@ -117,7 +119,7 @@ internal class ChatGenerationController(
     /** 用户点"停止"。 */
     fun stop() {
         // 只停止单聊的生成,不影响群聊
-        val sid = effectiveGenerationSessionId(accessor.snapshot)
+        val sid = effectiveGenerationSessionId(accessor.snapshot) ?: return
         sid?.let { executionRegistry?.requestCancelForSession(it, "user_stop") }
         chatGenerationManager.stop(sid)
         // 记录运行时取消标志,区分"用户停止"与异常失败;Job 与 chatGenerationManager 持有同一实例,重复 cancel 幂等。

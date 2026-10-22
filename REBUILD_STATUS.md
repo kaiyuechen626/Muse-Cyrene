@@ -6,7 +6,7 @@
 
 以已验收的 0.1.0 源码提交 `0b94f4ab9c96a87419a53a739c8d12d0425f8535` 为基础，只合入当前需要的本地语音功能。安装版本使用 0.1.9（270），便于覆盖现有版本并保留手机数据；没有回退 Android 版本代码。
 
-实际开发、构建目录为 `D:\muse update\Muse-Cyrene-working`。用户指定的 `D:\muse update\Muse-Cyrene-0.1.0-consolidated` 自收到保护指示后不再修改；已停止原先在该目录进行的构建，从中复制源码到当前工作目录。保护指示之前，该目录已移入语音改动，因此纯 0.1.0 基线另以原始提交及其归档逐文件核对。复制前后的源码哈希检查点保存在工程外的 `work/consolidation-010/protected-backup-checkpoint.json`。
+实际开发、构建目录为 `<workspace>/Muse-Cyrene-working`。用户指定的 `<workspace>/Muse-Cyrene-0.1.0-consolidated` 自收到保护指示后不再修改；已停止原先在该目录进行的构建，从中复制源码到当前工作目录。保护指示之前，该目录已移入语音改动，因此纯 0.1.0 基线另以原始提交及其归档逐文件核对。复制前后的源码哈希检查点保存在工程外的 `work/consolidation-010/protected-backup-checkpoint.json`。
 
 保留 0.1.0 的原有功能，包括 DeepSeek、聊天与设置、OCR、二维码、压缩包、网页界面及 Node/Python 运行时。另保留原“昔涟”应用内音色、音色导入、可关闭的快速合成、短句合并、播放时预生成后续片段、系统 TTS 回退、自动朗读、后台朗读及暂停／继续／停止。
 

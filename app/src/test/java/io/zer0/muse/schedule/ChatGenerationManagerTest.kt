@@ -11,6 +11,25 @@ import org.junit.Test
 class ChatGenerationManagerTest {
 
     @Test
+    fun `same assistant runs two sessions and stopping one leaves the other active`() = runTest {
+        val manager = ChatGenerationManager(backgroundScope, ConversationSessionManager(backgroundScope))
+        val firstGate = CompletableDeferred<Unit>()
+        val secondGate = CompletableDeferred<Unit>()
+        val first = manager.launchGeneration("phone-task", "shared-role", "手机任务") { firstGate.await() }
+        val second = manager.launchGeneration("web-task", "shared-role", "网页任务") { secondGate.await() }
+        runCurrent()
+        assertEquals(setOf("phone-task", "web-task"), manager.activeGenerations.value.keys)
+        manager.stop("phone-task")
+        runCurrent()
+        assertTrue(first.isCancelled)
+        assertTrue(second.isActive)
+        assertEquals(setOf("web-task"), manager.activeGenerations.value.keys)
+        secondGate.complete(Unit)
+        runCurrent()
+        assertTrue(manager.activeGenerations.value.isEmpty())
+    }
+
+    @Test
     fun `active generation is registered before background coroutine starts`() = runTest {
         val manager = ChatGenerationManager(backgroundScope, ConversationSessionManager(backgroundScope))
         val gate = CompletableDeferred<Unit>()
